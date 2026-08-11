@@ -1,23 +1,26 @@
-#ifndef TALOS_MAINWINDOW_H
-#define TALOS_MAINWINDOW_H
+#pragma once
 
 #include <QWidget>
-#include <QRegion>
 #include <QRect>
 #include <QPoint>
-
-class ChatWidget;
+#include <QString>
+#include <QInputDialog>
+#include <QDebug>
+#include "../ChatWidget.h"
+#include "../AudioRecorder.h"
+#include "../WakeWordDetector.h"
+#include "../WhisperTranscriber.h"
 
 class MainWindow : public QWidget {
 Q_OBJECT
-
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() override = default;
-    QRect holeRect() const { return m_holeRect; }
+
+    QRect holeRect();
+
 protected:
-    void resizeEvent(QResizeEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
@@ -25,34 +28,48 @@ protected:
     void changeEvent(QEvent *event) override;
 
 private:
-    enum Handle {
+    enum class Handle {
         None,
-        HoleTopLeft, HoleTopRight, HoleBottomLeft, HoleBottomRight, HoleLeft, HoleRight, HoleTop, HoleBottom,
-        WinTop, WinBottom, WinLeft, WinRight, WinTopLeft, WinTopRight, WinBottomLeft, WinBottomRight
+        HoleTopLeft, HoleTopRight, HoleBottomLeft, HoleBottomRight,
+        HoleLeft, HoleRight, HoleTop, HoleBottom,
+        WinTop, WinBottom, WinLeft, WinRight,
+        WinTopLeft, WinTopRight, WinBottomLeft, WinBottomRight
     };
 
+    enum AppState {
+        StateListening,
+        StateTriggered,
+        StateProcessing
+    };
+
+    void updateChatGeometry();
     void updateClickThroughMask();
     Handle handleAt(const QPoint &pos) const;
     void updateCursorShape(const QPoint &pos);
     void toggleMaximize();
-    void updateChatGeometry();
+    void onSpeechCaptureFinished();
+    void chooseAudioDevice();
 
     QRect m_holeRect;
-    Handle m_activeHandle = None;
-    QPoint m_dragStartPos;
-    QRect m_dragStartHoleRect;
-    QRect m_dragStartWinGeometry;
-    int m_handleSize = 10;
-    int m_borderResizeWidth = 8;
-
+    QRect m_titleBarRect;
     QRect m_closeButtonRect;
     QRect m_maxButtonRect;
     QRect m_minButtonRect;
-    QRect m_titleBarRect;
-    bool m_isDraggingWindow = false;
-    QPoint m_windowDragStartPos;
 
     ChatWidget *m_chatWidget = nullptr;
-};
+    AudioRecorder *m_audioRecorder = nullptr;
+    WakeWordDetector *m_wakeWordDetector = nullptr;
+    WhisperTranscriber *m_transcriber = nullptr;
 
-#endif // TALOS_MAINWINDOW_H
+    AppState m_appState = StateListening;
+
+    Handle m_activeHandle = Handle::None;
+    bool m_isDraggingWindow = false;
+    QPoint m_dragStartPos;
+    QRect m_dragStartHoleRect;
+    QRect m_dragStartWinGeometry;
+    QPoint m_windowDragStartPos;
+
+    const int m_handleSize = 12;
+    const int m_borderResizeWidth = 6;
+};

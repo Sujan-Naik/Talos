@@ -39,11 +39,16 @@ Talos_autogen/timestamp: \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/3.26.4/CMakeCXXCompiler.cmake \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/3.26.4/CMakeSystem.cmake \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/moc_predefs.h \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-src/include/onnxruntime_c_api.h \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-src/include/onnxruntime_cxx_api.h \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-src/include/onnxruntime_cxx_inline.h \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-src/include/onnxruntime_float16.h \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/include/ggml.h \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/include/whisper.h \
 	/home/sujan/CLionProjects/Talos/include/AudioRecorder.h \
 	/home/sujan/CLionProjects/Talos/include/CaptureOverlay.h \
 	/home/sujan/CLionProjects/Talos/include/ChatWidget.h \
+	/home/sujan/CLionProjects/Talos/include/WakeWordDetector.h \
 	/home/sujan/CLionProjects/Talos/include/WhisperTranscriber.h \
 	/home/sujan/CLionProjects/Talos/include/window/MainWindow.h \
 	/home/sujan/CLionProjects/Talos/src/ChatWidget.cpp \
@@ -78,6 +83,7 @@ Talos_autogen/timestamp: \
 	/usr/include/c++/12/bits/cpp_type_traits.h \
 	/usr/include/c++/12/bits/cxxabi_forced.h \
 	/usr/include/c++/12/bits/cxxabi_init_exception.h \
+	/usr/include/c++/12/bits/deque.tcc \
 	/usr/include/c++/12/bits/enable_special_members.h \
 	/usr/include/c++/12/bits/erase_if.h \
 	/usr/include/c++/12/bits/exception.h \
@@ -128,6 +134,7 @@ Talos_autogen/timestamp: \
 	/usr/include/c++/12/bits/stl_algobase.h \
 	/usr/include/c++/12/bits/stl_bvector.h \
 	/usr/include/c++/12/bits/stl_construct.h \
+	/usr/include/c++/12/bits/stl_deque.h \
 	/usr/include/c++/12/bits/stl_function.h \
 	/usr/include/c++/12/bits/stl_heap.h \
 	/usr/include/c++/12/bits/stl_iterator.h \
@@ -165,12 +172,14 @@ Talos_autogen/timestamp: \
 	/usr/include/c++/12/concepts \
 	/usr/include/c++/12/cstddef \
 	/usr/include/c++/12/cstdint \
+	/usr/include/c++/12/cstdio \
 	/usr/include/c++/12/cstdlib \
 	/usr/include/c++/12/cstring \
 	/usr/include/c++/12/cwchar \
 	/usr/include/c++/12/cwctype \
 	/usr/include/c++/12/debug/assertions.h \
 	/usr/include/c++/12/debug/debug.h \
+	/usr/include/c++/12/deque \
 	/usr/include/c++/12/exception \
 	/usr/include/c++/12/ext/aligned_buffer.h \
 	/usr/include/c++/12/ext/alloc_traits.h \
@@ -332,11 +341,14 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/gnu/stubs.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QBuffer \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QDebug \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QFlags \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QIODevice \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonArray \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QMetaType \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QMutex \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QMutexLocker \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
@@ -400,6 +412,7 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qmath.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qmetacontainer.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qmetatype.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qmutex.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qnamespace.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qnumeric.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h \
@@ -438,6 +451,7 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qtextstream.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qtsan_impl.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qtypeinfo.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qurl.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qutf8stringview.h \
@@ -446,7 +460,6 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qvarlengtharray.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qversiontagging.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/QPainter \
-	/usr/include/x86_64-linux-gnu/qt6/QtGui/QRegion \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qaction.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qbitmap.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qbrush.h \
@@ -510,6 +523,7 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetwork-config.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkexports.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkglobal.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QInputDialog \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLineEdit \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QListWidget \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
@@ -520,7 +534,9 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractscrollarea.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractslider.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractspinbox.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialog.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qframe.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qinputdialog.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlineedit.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlistview.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qlistwidget.h \

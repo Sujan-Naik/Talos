@@ -7,29 +7,32 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QJsonArray>
+#include <QTimer>
 #include "AudioRecorder.h"
 #include "WhisperTranscriber.h"
 #include "CaptureOverlay.h"
-
 
 class ChatWidget : public QWidget {
 Q_OBJECT
 public:
     explicit ChatWidget(QWidget *parent = nullptr);
     void captureAndSetText();
+    void appendMessageAsUser(const QString &text);
+    void sendApiRequest();
 
 signals:
     void messageSent(const QString &text);
 
 private slots:
     void toggleMicrophone();
+    void processVadChunk();
     void handleReadyRead();
     void handleReplyFinished();
 
 private:
     void appendMessage(const QString &text, bool isUser);
     void appendToCurrentAiMessage(const QString &deltaText);
-    void sendApiRequest();
+    void stopMicrophoneAndTranscribe();
 
     QListWidget *m_listWidget = nullptr;
     QLineEdit *m_inputBox = nullptr;
@@ -48,4 +51,8 @@ private:
     AudioRecorder *m_recorder = nullptr;
     WhisperTranscriber *m_transcriber = nullptr;
     bool m_isRecording = false;
+
+    QTimer *m_vadTimer = nullptr;
+    bool m_hasSpeechStarted = false;
+    int m_silenceMs = 0;
 };

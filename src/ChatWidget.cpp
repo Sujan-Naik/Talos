@@ -6,6 +6,7 @@
 #include <QPainterPath>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QNetworkRequest>
 #include <QUrl>
 #include <tesseract/baseapi.h>
@@ -18,6 +19,8 @@
 #include <QTimer>
 #include <QThread>
 #include <QDebug>
+#include <cmath>
+#include <numeric>
 
 ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
     m_networkManager = new QNetworkAccessManager(this);
@@ -25,6 +28,11 @@ ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
 
     m_recorder = new AudioRecorder(this);
     m_transcriber = new WhisperTranscriber("ggml-tiny.en.bin", this);
+
+    m_vadTimer = new QTimer(this);
+    m_vadTimer->setInterval(100);
+
+    connect(m_vadTimer, &QTimer::timeout, this, &ChatWidget::processVadChunk);
 
     connect(m_transcriber, &WhisperTranscriber::transcriptionFinished, this, [this](const QString &text) {
         m_micButton->setEnabled(true);
@@ -80,25 +88,77 @@ ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
 void ChatWidget::toggleMicrophone() {
     if (!m_isRecording) {
         m_isRecording = true;
+        m_hasSpeechStarted = false;
+        m_silenceMs = 0;
+
         m_recorder->startRecording();
-        m_micButton->setText("⏹");
+        m_vadTimer->start();
+
+        m_micButton->setText("⏹ Listening...");
         m_micButton->setStyleSheet("QPushButton { background-color: #c62828; color: white; }");
     } else {
-        m_isRecording = false;
-        m_micButton->setEnabled(false);
-        m_micButton->setText("...");
-        m_micButton->setStyleSheet("QPushButton { background-color: #555555; color: white; }");
-
-        std::vector<float> pcmData = m_recorder->stopRecording();
-        m_transcriber->transcribeAsync(pcmData);
+        stopMicrophoneAndTranscribe();
     }
 }
+
+void ChatWidget::processVadChunk() {
+    if (!m_isRecording) return;
+
+    std::vector<float> recentSamples = m_recorder->getRecentSamples(1600);
+    if (recentSamples.empty()) return;
+
+    float sumSquares = 0.0f;
+    for (float sample : recentSamples) {
+        sumSquares += sample * sample;
+    }
+    float rms = std::sqrt(sumSquares / static_cast<float>(recentSamples.size()));
+
+    const float speechThreshold = 0.015f;
+    const int silenceTimeoutMs = 1200;
+
+    if (rms > speechThreshold) {
+        m_hasSpeechStarted = true;
+        m_silenceMs = 0;
+    } else if (m_hasSpeechStarted) {
+        m_silenceMs += m_vadTimer->interval();
+        if (m_silenceMs >= silenceTimeoutMs) {
+            stopMicrophoneAndTranscribe();
+        }
+    }
+}
+
+void ChatWidget::stopMicrophoneAndTranscribe() {
+    if (!m_isRecording) return;
+
+    m_isRecording = false;
+    m_vadTimer->stop();
+
+    m_micButton->setEnabled(false);
+    m_micButton->setText("Transcribing...");
+    m_micButton->setStyleSheet("QPushButton { background-color: #555555; color: white; }");
+
+    std::vector<float> pcmData = m_recorder->stopRecording();
+    m_transcriber->transcribeAsync(pcmData);
+}
+
+void ChatWidget::appendMessageAsUser(const QString &text){
+    auto *item = new QListWidgetItem(m_listWidget);
+    item->setText(("User: ") + text);
+    m_listWidget->addItem(item);
+//    m_listWidget->scrollToBottom();
+
+    QJsonObject msgObj;
+    msgObj["role"] = "user";
+    msgObj["content"] = text;
+    m_conversationHistory.append(msgObj);
+}
+
 
 void ChatWidget::appendMessage(const QString &text, bool isUser) {
     auto *item = new QListWidgetItem(m_listWidget);
     item->setText((isUser ? "User: " : "AI: ") + text);
     m_listWidget->addItem(item);
-    m_listWidget->scrollToBottom();
+//    m_listWidget->scrollToBottom();
 
     QJsonObject msgObj;
     msgObj["role"] = isUser ? "user" : "assistant";
@@ -169,7 +229,7 @@ void ChatWidget::appendToCurrentAiMessage(const QString &deltaText) {
         QString currentText = m_currentAiItem->text();
         m_currentAiItem->setText(currentText + deltaText);
     }
-    m_listWidget->scrollToBottom();
+//    m_listWidget->scrollToBottom();
 }
 
 void ChatWidget::handleReplyFinished() {

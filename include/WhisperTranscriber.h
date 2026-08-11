@@ -22,35 +22,38 @@ public:
 
     bool isLoaded() const { return m_ctx != nullptr; }
 
+    QString transcribe(const std::vector<float> &pcm32f) {
+        if (!m_ctx || pcm32f.empty()) {
+            return QString();
+        }
+
+        whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+        params.print_progress = false;
+        params.print_special = false;
+        params.print_realtime = false;
+        params.print_timestamps = false;
+        params.translate = false;
+        params.language = "en";
+        params.n_threads = 4;
+
+        if (whisper_full(m_ctx, params, pcm32f.data(), pcm32f.size()) != 0) {
+            return QString();
+        }
+
+        QString resultText;
+        int n_segments = whisper_full_n_segments(m_ctx);
+        for (int i = 0; i < n_segments; ++i) {
+            const char *text = whisper_full_get_segment_text(m_ctx, i);
+            resultText += QString::fromUtf8(text);
+        }
+
+        return resultText.trimmed();
+    }
+
     void transcribeAsync(const std::vector<float> &pcm32f) {
         std::thread([this, pcm32f]() {
-            if (!m_ctx || pcm32f.empty()) {
-                emit transcriptionFinished("");
-                return;
-            }
-
-            whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
-            params.print_progress = false;
-            params.print_special = false;
-            params.print_realtime = false;
-            params.print_timestamps = false;
-            params.translate = false;
-            params.language = "en";
-            params.n_threads = 4;
-
-            if (whisper_full(m_ctx, params, pcm32f.data(), pcm32f.size()) != 0) {
-                emit transcriptionFinished("");
-                return;
-            }
-
-            QString resultText;
-            int n_segments = whisper_full_n_segments(m_ctx);
-            for (int i = 0; i < n_segments; ++i) {
-                const char *text = whisper_full_get_segment_text(m_ctx, i);
-                resultText += QString::fromUtf8(text);
-            }
-
-            emit transcriptionFinished(resultText.trimmed());
+            QString resultText = transcribe(pcm32f);
+            emit transcriptionFinished(resultText);
         }).detach();
     }
 
