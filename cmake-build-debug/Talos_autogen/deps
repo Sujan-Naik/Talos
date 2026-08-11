@@ -1,7 +1,6 @@
 Talos_autogen/timestamp: \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeFindDependencyMacro.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake \
@@ -19,6 +18,9 @@ Talos_autogen/timestamp: \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FeatureSummary.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent/CMakeLists.cmake.in \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindGit.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenGL.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageMessage.cmake \
@@ -26,9 +28,6 @@ Talos_autogen/timestamp: \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindThreads.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindVulkan.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/GNUInstallDirs.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckCompilerFlag.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckFlagCommonConfig.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckSourceCompiles.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/MacroAddFileDependencies.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-C.cmake \
 	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-CXX.cmake \
@@ -40,8 +39,12 @@ Talos_autogen/timestamp: \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/3.26.4/CMakeCXXCompiler.cmake \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/3.26.4/CMakeSystem.cmake \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/moc_predefs.h \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/include/ggml.h \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/include/whisper.h \
+	/home/sujan/CLionProjects/Talos/include/AudioRecorder.h \
 	/home/sujan/CLionProjects/Talos/include/CaptureOverlay.h \
 	/home/sujan/CLionProjects/Talos/include/ChatWidget.h \
+	/home/sujan/CLionProjects/Talos/include/WhisperTranscriber.h \
 	/home/sujan/CLionProjects/Talos/include/window/MainWindow.h \
 	/home/sujan/CLionProjects/Talos/src/ChatWidget.cpp \
 	/home/sujan/CLionProjects/Talos/src/main.cpp \
@@ -198,6 +201,7 @@ Talos_autogen/timestamp: \
 	/usr/include/c++/12/streambuf \
 	/usr/include/c++/12/string \
 	/usr/include/c++/12/string_view \
+	/usr/include/c++/12/thread \
 	/usr/include/c++/12/tr1/bessel_function.tcc \
 	/usr/include/c++/12/tr1/beta_function.tcc \
 	/usr/include/c++/12/tr1/ell_integral.tcc \
@@ -326,6 +330,8 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/c++/12/bits/os_defines.h \
 	/usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
 	/usr/include/x86_64-linux-gnu/gnu/stubs.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QBuffer \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/QByteArray \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QFlags \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QIODevice \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QJsonArray \
@@ -333,7 +339,6 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QMetaType \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
-	/usr/include/x86_64-linux-gnu/qt6/QtCore/QPointer \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QSharedDataPointer \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
@@ -351,6 +356,7 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qbasicatomic.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qbindingstorage.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtCore/qbuffer.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearray.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearrayalgorithms.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearraylist.h \
@@ -402,7 +408,6 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qobjectdefs_impl.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qpair.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qpoint.h \
-	/usr/include/x86_64-linux-gnu/qt6/QtCore/qpointer.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qprocessordetection.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qrect.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtCore/qrefcount.h \
@@ -473,6 +478,18 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qvalidator.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtGui/qwindowdefs.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/QAudioDevice \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/QAudioFormat \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/QAudioSource \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/QMediaDevices \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qaudio.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qaudiodevice.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qaudioformat.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qaudiosource.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qmediadevices.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qtmultimedia-config.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qtmultimediaexports.h \
+	/usr/include/x86_64-linux-gnu/qt6/QtMultimedia/qtmultimediaglobal.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkAccessManager \
 	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkReply \
 	/usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkRequest \
@@ -496,7 +513,6 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QLineEdit \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QListWidget \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QPushButton \
-	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QStyledItemDelegate \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QWidget \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractitemdelegate.h \
@@ -513,7 +529,6 @@ Talos_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsizepolicy.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qslider.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstyle.h \
-	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstyleditemdelegate.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qstyleoption.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabbar.h \
 	/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \
@@ -603,6 +618,19 @@ Talos_autogen/timestamp: \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets-none.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersion.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersionImpl.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaDependencies.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaPlugins.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaVersionlessTargets.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginAdditionalTargetInfo.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginConfig.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets-none.cmake \
+	/usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkAdditionalTargetInfo.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfig.cmake \
 	/usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersion.cmake \

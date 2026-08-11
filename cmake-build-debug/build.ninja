@@ -47,37 +47,37 @@ cmake_ninja_workdir = /home/sujan/CLionProjects/Talos/cmake-build-debug/
 #############################################
 # Order-only phony target for Talos
 
-build cmake_object_order_depends_target_Talos: phony || Talos_autogen Talos_autogen/mocs_compilation.cpp Talos_autogen/timestamp Talos_autogen_timestamp_deps
+build cmake_object_order_depends_target_Talos: phony || Talos_autogen Talos_autogen/mocs_compilation.cpp Talos_autogen/timestamp Talos_autogen_timestamp_deps cmake_object_order_depends_target_ggml cmake_object_order_depends_target_whisper
 
 build CMakeFiles/Talos.dir/Talos_autogen/mocs_compilation.cpp.o: CXX_COMPILER__Talos_unscanned_Debug /home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/mocs_compilation.cpp || cmake_object_order_depends_target_Talos
-  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
+  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_MULTIMEDIA_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/Talos.dir/Talos_autogen/mocs_compilation.cpp.o.d
   FLAGS = -g -fdiagnostics-color=always -fPIC
-  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/. -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -isystem /usr/include/x86_64-linux-gnu/qt6/QtMultimedia
   OBJECT_DIR = CMakeFiles/Talos.dir
   OBJECT_FILE_DIR = CMakeFiles/Talos.dir/Talos_autogen
 
 build CMakeFiles/Talos.dir/src/main.cpp.o: CXX_COMPILER__Talos_unscanned_Debug /home/sujan/CLionProjects/Talos/src/main.cpp || cmake_object_order_depends_target_Talos
-  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
+  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_MULTIMEDIA_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/Talos.dir/src/main.cpp.o.d
   FLAGS = -g -fdiagnostics-color=always -fPIC
-  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/. -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -isystem /usr/include/x86_64-linux-gnu/qt6/QtMultimedia
   OBJECT_DIR = CMakeFiles/Talos.dir
   OBJECT_FILE_DIR = CMakeFiles/Talos.dir/src
 
 build CMakeFiles/Talos.dir/src/window/MainWindow.cpp.o: CXX_COMPILER__Talos_unscanned_Debug /home/sujan/CLionProjects/Talos/src/window/MainWindow.cpp || cmake_object_order_depends_target_Talos
-  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
+  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_MULTIMEDIA_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/Talos.dir/src/window/MainWindow.cpp.o.d
   FLAGS = -g -fdiagnostics-color=always -fPIC
-  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/. -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -isystem /usr/include/x86_64-linux-gnu/qt6/QtMultimedia
   OBJECT_DIR = CMakeFiles/Talos.dir
   OBJECT_FILE_DIR = CMakeFiles/Talos.dir/src/window
 
 build CMakeFiles/Talos.dir/src/ChatWidget.cpp.o: CXX_COMPILER__Talos_unscanned_Debug /home/sujan/CLionProjects/Talos/src/ChatWidget.cpp || cmake_object_order_depends_target_Talos
-  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
+  DEFINES = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_MULTIMEDIA_LIB -DQT_NETWORK_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/Talos.dir/src/ChatWidget.cpp.o.d
   FLAGS = -g -fdiagnostics-color=always -fPIC
-  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/include -I/usr/include/leptonica -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/. -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -isystem /usr/include/x86_64-linux-gnu/qt6/QtMultimedia
   OBJECT_DIR = CMakeFiles/Talos.dir
   OBJECT_FILE_DIR = CMakeFiles/Talos.dir/src
 
@@ -89,9 +89,9 @@ build CMakeFiles/Talos.dir/src/ChatWidget.cpp.o: CXX_COMPILER__Talos_unscanned_D
 #############################################
 # Link the executable Talos
 
-build Talos: CXX_EXECUTABLE_LINKER__Talos_Debug CMakeFiles/Talos.dir/Talos_autogen/mocs_compilation.cpp.o CMakeFiles/Talos.dir/src/main.cpp.o CMakeFiles/Talos.dir/src/window/MainWindow.cpp.o CMakeFiles/Talos.dir/src/ChatWidget.cpp.o | /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 || Talos_autogen Talos_autogen_timestamp_deps
+build Talos: CXX_EXECUTABLE_LINKER__Talos_Debug CMakeFiles/Talos.dir/Talos_autogen/mocs_compilation.cpp.o CMakeFiles/Talos.dir/src/main.cpp.o CMakeFiles/Talos.dir/src/window/MainWindow.cpp.o CMakeFiles/Talos.dir/src/ChatWidget.cpp.o | /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Multimedia.so.6.4.2 _deps/whisper-build/src/libwhisper.so.1.7.1 /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 _deps/whisper-build/ggml/src/libggml.so || Talos_autogen Talos_autogen_timestamp_deps _deps/whisper-build/ggml/src/libggml.so _deps/whisper-build/src/libwhisper.so _deps/whisper-build/src/libwhisper.so
   FLAGS = -g
-  LINK_LIBRARIES = /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2  -ltesseract  -larchive  -lcurl  -llept  /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so  /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2
+  LINK_LIBRARIES = -Wl,-rpath,/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/src:/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src  /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Multimedia.so.6.4.2  _deps/whisper-build/src/libwhisper.so.1.7.1  -ltesseract  -larchive  -lcurl  -llept  /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so  /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2  /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2  _deps/whisper-build/ggml/src/libggml.so
   OBJECT_DIR = CMakeFiles/Talos.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -123,9 +123,51 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 
 
 #############################################
+# Utility command for list_install_components
+
+build list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build CMakeFiles/install.util: CUSTOM_COMMAND all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build install: phony CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build CMakeFiles/install/local.util: CUSTOM_COMMAND all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build install/local: phony CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build CMakeFiles/install/strip.util: CUSTOM_COMMAND all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build install/strip: phony CMakeFiles/install/strip.util
+
+
+#############################################
 # Utility command for Talos_autogen_timestamp_deps
 
-build Talos_autogen_timestamp_deps: phony CMakeFiles/Talos_autogen_timestamp_deps
+build Talos_autogen_timestamp_deps: phony CMakeFiles/Talos_autogen_timestamp_deps _deps/whisper-build/src/libwhisper.so
 
 
 #############################################
@@ -137,7 +179,7 @@ build Talos_autogen: phony CMakeFiles/Talos_autogen Talos_autogen/timestamp Talo
 #############################################
 # Custom command for Talos_autogen/timestamp
 
-build Talos_autogen/timestamp Talos_autogen/mocs_compilation.cpp | ${cmake_ninja_workdir}Talos_autogen/timestamp ${cmake_ninja_workdir}Talos_autogen/mocs_compilation.cpp: CUSTOM_COMMAND /usr/lib/qt6/libexec/moc /usr/lib/qt6/libexec/uic || Talos_autogen_timestamp_deps
+build Talos_autogen/timestamp Talos_autogen/mocs_compilation.cpp | ${cmake_ninja_workdir}Talos_autogen/timestamp ${cmake_ninja_workdir}Talos_autogen/mocs_compilation.cpp: CUSTOM_COMMAND /usr/lib/qt6/libexec/moc /usr/lib/qt6/libexec/uic || Talos_autogen_timestamp_deps _deps/whisper-build/ggml/src/libggml.so _deps/whisper-build/src/libwhisper.so
   COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -E cmake_autogen /home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/Talos_autogen.dir/AutogenInfo.json Debug && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -E touch /home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/timestamp && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -E cmake_transform_depfile Ninja gccdepfile /home/sujan/CLionProjects/Talos /home/sujan/CLionProjects/Talos /home/sujan/CLionProjects/Talos/cmake-build-debug /home/sujan/CLionProjects/Talos/cmake-build-debug /home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/deps /home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/d/1d27cd94d96ac2e4cebe35c220eef701f5907775a049f8896210d186a246e92c.d
   DESC = Automatic MOC and UIC for target Talos
   depfile = /home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/d/1d27cd94d96ac2e4cebe35c220eef701f5907775a049f8896210d186a246e92c.d
@@ -147,16 +189,415 @@ build Talos_autogen/timestamp Talos_autogen/mocs_compilation.cpp | ${cmake_ninja
 #############################################
 # Phony custom command for CMakeFiles/Talos_autogen_timestamp_deps
 
-build CMakeFiles/Talos_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/Talos_autogen_timestamp_deps: phony /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 /usr/lib/qt6/libexec/moc /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/qt6/libexec/uic /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2
+build CMakeFiles/Talos_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/Talos_autogen_timestamp_deps: phony _deps/whisper-build/src/libwhisper.so.1.7.1 /usr/lib/qt6/libexec/moc /usr/lib/x86_64-linux-gnu/libQt6Core.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Multimedia.so.6.4.2 /usr/lib/x86_64-linux-gnu/libQt6Network.so.6.4.2 /usr/lib/qt6/libexec/uic /usr/lib/x86_64-linux-gnu/libQt6Gui.so.6.4.2 || _deps/whisper-build/ggml/src/libggml.so _deps/whisper-build/src/libwhisper.so
 
 
 #############################################
 # Phony custom command for CMakeFiles/Talos_autogen
 
-build CMakeFiles/Talos_autogen | ${cmake_ninja_workdir}CMakeFiles/Talos_autogen: phony Talos_autogen/timestamp || Talos_autogen_timestamp_deps
+build CMakeFiles/Talos_autogen | ${cmake_ninja_workdir}CMakeFiles/Talos_autogen: phony Talos_autogen/timestamp || Talos_autogen_timestamp_deps _deps/whisper-build/ggml/src/libggml.so _deps/whisper-build/src/libwhisper.so
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /home/sujan/CLionProjects/Talos/CMakeLists.txt
+# =============================================================================
+
+
+#############################################
+# Utility command for edit_cache
+
+build _deps/whisper-build/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build _deps/whisper-build/edit_cache: phony _deps/whisper-build/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build _deps/whisper-build/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/sujan/CLionProjects/Talos -B/home/sujan/CLionProjects/Talos/cmake-build-debug
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/rebuild_cache: phony _deps/whisper-build/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build _deps/whisper-build/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build _deps/whisper-build/CMakeFiles/install.util: CUSTOM_COMMAND _deps/whisper-build/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/install: phony _deps/whisper-build/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build _deps/whisper-build/CMakeFiles/install/local.util: CUSTOM_COMMAND _deps/whisper-build/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/install/local: phony _deps/whisper-build/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build _deps/whisper-build/CMakeFiles/install/strip.util: CUSTOM_COMMAND _deps/whisper-build/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/install/strip: phony _deps/whisper-build/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/CMakeLists.txt
+# =============================================================================
+
+
+#############################################
+# Utility command for edit_cache
+
+build _deps/whisper-build/ggml/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build _deps/whisper-build/ggml/edit_cache: phony _deps/whisper-build/ggml/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build _deps/whisper-build/ggml/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/sujan/CLionProjects/Talos -B/home/sujan/CLionProjects/Talos/cmake-build-debug
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/rebuild_cache: phony _deps/whisper-build/ggml/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build _deps/whisper-build/ggml/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build _deps/whisper-build/ggml/CMakeFiles/install.util: CUSTOM_COMMAND _deps/whisper-build/ggml/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/install: phony _deps/whisper-build/ggml/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build _deps/whisper-build/ggml/CMakeFiles/install/local.util: CUSTOM_COMMAND _deps/whisper-build/ggml/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/install/local: phony _deps/whisper-build/ggml/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build _deps/whisper-build/ggml/CMakeFiles/install/strip.util: CUSTOM_COMMAND _deps/whisper-build/ggml/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/install/strip: phony _deps/whisper-build/ggml/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/CMakeLists.txt
+# =============================================================================
+
+# =============================================================================
+# Object build statements for SHARED_LIBRARY target ggml
+
+
+#############################################
+# Order-only phony target for ggml
+
+build cmake_object_order_depends_target_ggml: phony || _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+
+build _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml.c.o: C_COMPILER__ggml_unscanned_Debug /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/ggml.c || cmake_object_order_depends_target_ggml
+  DEFINES = -DGGML_BUILD -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_OPENMP -D_GLIBCXX_ASSERTIONS -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_EXPORTS
+  DEP_FILE = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml.c.o.d
+  FLAGS = -g -std=gnu11 -fPIC -fdiagnostics-color=always -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -march=native -fopenmp
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/.
+  OBJECT_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+  OBJECT_FILE_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+
+build _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-alloc.c.o: C_COMPILER__ggml_unscanned_Debug /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/ggml-alloc.c || cmake_object_order_depends_target_ggml
+  DEFINES = -DGGML_BUILD -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_OPENMP -D_GLIBCXX_ASSERTIONS -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_EXPORTS
+  DEP_FILE = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-alloc.c.o.d
+  FLAGS = -g -std=gnu11 -fPIC -fdiagnostics-color=always -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -march=native -fopenmp
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/.
+  OBJECT_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+  OBJECT_FILE_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+
+build _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-backend.cpp.o: CXX_COMPILER__ggml_unscanned_Debug /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/ggml-backend.cpp || cmake_object_order_depends_target_ggml
+  DEFINES = -DGGML_BUILD -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_OPENMP -D_GLIBCXX_ASSERTIONS -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_EXPORTS
+  DEP_FILE = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-backend.cpp.o.d
+  FLAGS = -g -std=gnu++11 -fPIC -fdiagnostics-color=always -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-array-bounds -Wno-format-truncation -Wextra-semi -march=native -fopenmp
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/.
+  OBJECT_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+  OBJECT_FILE_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+
+build _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-quants.c.o: C_COMPILER__ggml_unscanned_Debug /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/ggml-quants.c || cmake_object_order_depends_target_ggml
+  DEFINES = -DGGML_BUILD -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_OPENMP -D_GLIBCXX_ASSERTIONS -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_EXPORTS
+  DEP_FILE = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-quants.c.o.d
+  FLAGS = -g -std=gnu11 -fPIC -fdiagnostics-color=always -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -march=native -fopenmp
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/.
+  OBJECT_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+  OBJECT_FILE_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+
+build _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-aarch64.c.o: C_COMPILER__ggml_unscanned_Debug /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/ggml-aarch64.c || cmake_object_order_depends_target_ggml
+  DEFINES = -DGGML_BUILD -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_OPENMP -D_GLIBCXX_ASSERTIONS -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_EXPORTS
+  DEP_FILE = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-aarch64.c.o.d
+  FLAGS = -g -std=gnu11 -fPIC -fdiagnostics-color=always -Wshadow -Wstrict-prototypes -Wpointer-arith -Wmissing-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wdouble-promotion -march=native -fopenmp
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/.
+  OBJECT_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+  OBJECT_FILE_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+
+
+# =============================================================================
+# Link build statements for SHARED_LIBRARY target ggml
+
+
+#############################################
+# Link the shared library _deps/whisper-build/ggml/src/libggml.so
+
+build _deps/whisper-build/ggml/src/libggml.so: CXX_SHARED_LIBRARY_LINKER__ggml_Debug _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml.c.o _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-alloc.c.o _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-backend.cpp.o _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-quants.c.o _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir/ggml-aarch64.c.o | /usr/lib/gcc/x86_64-linux-gnu/12/libgomp.so /usr/lib/x86_64-linux-gnu/libpthread.a
+  LANGUAGE_COMPILE_FLAGS = -g
+  LINK_LIBRARIES = -lm  /usr/lib/gcc/x86_64-linux-gnu/12/libgomp.so  /usr/lib/x86_64-linux-gnu/libpthread.a
+  OBJECT_DIR = _deps/whisper-build/ggml/src/CMakeFiles/ggml.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  SONAME = libggml.so
+  SONAME_FLAG = -Wl,-soname,
+  TARGET_FILE = _deps/whisper-build/ggml/src/libggml.so
+  TARGET_PDB = ggml.so.dbg
+
+
+#############################################
+# Utility command for edit_cache
+
+build _deps/whisper-build/ggml/src/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build _deps/whisper-build/ggml/src/edit_cache: phony _deps/whisper-build/ggml/src/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build _deps/whisper-build/ggml/src/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/sujan/CLionProjects/Talos -B/home/sujan/CLionProjects/Talos/cmake-build-debug
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/src/rebuild_cache: phony _deps/whisper-build/ggml/src/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build _deps/whisper-build/ggml/src/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build _deps/whisper-build/ggml/src/CMakeFiles/install.util: CUSTOM_COMMAND _deps/whisper-build/ggml/src/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/src/install: phony _deps/whisper-build/ggml/src/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build _deps/whisper-build/ggml/src/CMakeFiles/install/local.util: CUSTOM_COMMAND _deps/whisper-build/ggml/src/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/src/install/local: phony _deps/whisper-build/ggml/src/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build _deps/whisper-build/ggml/src/CMakeFiles/install/strip.util: CUSTOM_COMMAND _deps/whisper-build/ggml/src/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/ggml/src/install/strip: phony _deps/whisper-build/ggml/src/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/CMakeLists.txt
+# =============================================================================
+
+# =============================================================================
+# Object build statements for SHARED_LIBRARY target whisper
+
+
+#############################################
+# Order-only phony target for whisper
+
+build cmake_object_order_depends_target_whisper: phony || cmake_object_order_depends_target_ggml
+
+build _deps/whisper-build/src/CMakeFiles/whisper.dir/whisper.cpp.o: CXX_COMPILER__whisper_unscanned_Debug /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/whisper.cpp || cmake_object_order_depends_target_whisper
+  DEFINES = -DWHISPER_BUILD -DWHISPER_SHARED -Dwhisper_EXPORTS
+  DEP_FILE = _deps/whisper-build/src/CMakeFiles/whisper.dir/whisper.cpp.o.d
+  FLAGS = -g -fPIC -fdiagnostics-color=always
+  INCLUDES = -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/. -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/../include -I/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/ggml/src/../include
+  OBJECT_DIR = _deps/whisper-build/src/CMakeFiles/whisper.dir
+  OBJECT_FILE_DIR = _deps/whisper-build/src/CMakeFiles/whisper.dir
+
+
+# =============================================================================
+# Link build statements for SHARED_LIBRARY target whisper
+
+
+#############################################
+# Link the shared library _deps/whisper-build/src/libwhisper.so.1.7.1
+
+build _deps/whisper-build/src/libwhisper.so.1.7.1: CXX_SHARED_LIBRARY_LINKER__whisper_Debug _deps/whisper-build/src/CMakeFiles/whisper.dir/whisper.cpp.o | _deps/whisper-build/ggml/src/libggml.so || _deps/whisper-build/ggml/src/libggml.so
+  LANGUAGE_COMPILE_FLAGS = -g
+  LINK_LIBRARIES = -Wl,-rpath,/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src:  _deps/whisper-build/ggml/src/libggml.so
+  OBJECT_DIR = _deps/whisper-build/src/CMakeFiles/whisper.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  SONAME = libwhisper.so.1
+  SONAME_FLAG = -Wl,-soname,
+  TARGET_FILE = _deps/whisper-build/src/libwhisper.so.1.7.1
+  TARGET_PDB = whisper.so.dbg
+
+
+#############################################
+# Create library symlink _deps/whisper-build/src/libwhisper.so
+
+build _deps/whisper-build/src/libwhisper.so.1 _deps/whisper-build/src/libwhisper.so: CMAKE_SYMLINK_LIBRARY _deps/whisper-build/src/libwhisper.so.1.7.1
+  POST_BUILD = :
+
+
+#############################################
+# Utility command for edit_cache
+
+build _deps/whisper-build/src/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build _deps/whisper-build/src/edit_cache: phony _deps/whisper-build/src/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build _deps/whisper-build/src/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/sujan/CLionProjects/Talos -B/home/sujan/CLionProjects/Talos/cmake-build-debug
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/src/rebuild_cache: phony _deps/whisper-build/src/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build _deps/whisper-build/src/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build _deps/whisper-build/src/CMakeFiles/install.util: CUSTOM_COMMAND _deps/whisper-build/src/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/src/install: phony _deps/whisper-build/src/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build _deps/whisper-build/src/CMakeFiles/install/local.util: CUSTOM_COMMAND _deps/whisper-build/src/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/src/install/local: phony _deps/whisper-build/src/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build _deps/whisper-build/src/CMakeFiles/install/strip.util: CUSTOM_COMMAND _deps/whisper-build/src/all
+  COMMAND = cd /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/src && /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build _deps/whisper-build/src/install/strip: phony _deps/whisper-build/src/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Target aliases.
+
+build ggml: phony _deps/whisper-build/ggml/src/libggml.so
+
+build libggml.so: phony _deps/whisper-build/ggml/src/libggml.so
+
+build libwhisper.so: phony _deps/whisper-build/src/libwhisper.so
+
+build whisper: phony _deps/whisper-build/src/libwhisper.so
 
 # =============================================================================
 # Folder targets.
@@ -166,7 +607,35 @@ build CMakeFiles/Talos_autogen | ${cmake_ninja_workdir}CMakeFiles/Talos_autogen:
 #############################################
 # Folder: /home/sujan/CLionProjects/Talos/cmake-build-debug
 
-build all: phony Talos
+build all: phony Talos _deps/whisper-build/all
+
+# =============================================================================
+
+#############################################
+# Folder: /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build
+
+build _deps/whisper-build/all: phony _deps/whisper-build/ggml/all _deps/whisper-build/src/all
+
+# =============================================================================
+
+#############################################
+# Folder: /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml
+
+build _deps/whisper-build/ggml/all: phony _deps/whisper-build/ggml/src/all
+
+# =============================================================================
+
+#############################################
+# Folder: /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/ggml/src
+
+build _deps/whisper-build/ggml/src/all: phony _deps/whisper-build/ggml/src/libggml.so
+
+# =============================================================================
+
+#############################################
+# Folder: /home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-build/src
+
+build _deps/whisper-build/src/all: phony _deps/whisper-build/src/libwhisper.so
 
 # =============================================================================
 # Built-in targets
@@ -175,14 +644,14 @@ build all: phony Talos
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeFindDependencyMacro.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckIncludeFile.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckLibraryExists.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FeatureSummary.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenGL.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageMessage.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPkgConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindThreads.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindVulkan.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/GNUInstallDirs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckFlagCommonConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/MacroAddFileDependencies.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/UnixPaths.cmake /home/sujan/CLionProjects/Talos/CMakeLists.txt /usr/lib/x86_64-linux-gnu/cmake/Qt6/3rdparty/kwin/FindXKB.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapAtomic.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapOpenGL.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapVulkanHeaders.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Dependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Targets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6VersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeature.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeatureCommon.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicAppleHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicDependencyHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFinalizerHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFindPackageHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicPluginHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTargetHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTestHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicToolHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicWalkLibsHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsVersionlessTargets.cmake CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeFindDependencyMacro.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakePackageConfigHelpers.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeParseImplicitLinkInfo.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckIncludeFile.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckIncludeFileCXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckLibraryExists.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FeatureSummary.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent/CMakeLists.cmake.in /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindGit.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenGL.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenMP.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageMessage.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPkgConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindThreads.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindVulkan.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/GNUInstallDirs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckFlagCommonConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/MacroAddFileDependencies.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/UnixPaths.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/WriteBasicConfigVersionFile.cmake /home/sujan/CLionProjects/Talos/CMakeLists.txt /usr/lib/x86_64-linux-gnu/cmake/Qt6/3rdparty/kwin/FindXKB.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapAtomic.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapOpenGL.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapVulkanHeaders.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Dependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Targets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6VersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeature.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeatureCommon.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicAppleHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicDependencyHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFinalizerHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFindPackageHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicPluginHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTargetHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTestHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicToolHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicWalkLibsHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaPlugins.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsVersionlessTargets.cmake CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake _deps/whisper-src/CMakeLists.txt _deps/whisper-src/cmake/build-info.cmake _deps/whisper-src/cmake/whisper-config.cmake.in _deps/whisper-src/cmake/whisper.pc.in _deps/whisper-src/ggml/CMakeLists.txt _deps/whisper-src/ggml/src/CMakeLists.txt _deps/whisper-src/src/CMakeLists.txt
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeFindDependencyMacro.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckIncludeFile.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckLibraryExists.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FeatureSummary.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenGL.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageMessage.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPkgConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindThreads.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindVulkan.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/GNUInstallDirs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckFlagCommonConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/MacroAddFileDependencies.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/UnixPaths.cmake /home/sujan/CLionProjects/Talos/CMakeLists.txt /usr/lib/x86_64-linux-gnu/cmake/Qt6/3rdparty/kwin/FindXKB.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapAtomic.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapOpenGL.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapVulkanHeaders.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Dependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Targets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6VersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeature.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeatureCommon.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicAppleHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicDependencyHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFinalizerHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFindPackageHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicPluginHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTargetHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTestHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicToolHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicWalkLibsHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsVersionlessTargets.cmake CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake: phony
+build /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/BasicConfigVersion-SameMajorVersion.cmake.in /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeFindDependencyMacro.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakePackageConfigHelpers.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeParseImplicitLinkInfo.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckIncludeFile.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckIncludeFileCXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckLibraryExists.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FeatureSummary.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent/CMakeLists.cmake.in /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindGit.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenGL.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenMP.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageMessage.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPkgConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindThreads.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindVulkan.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/GNUInstallDirs.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckCompilerFlag.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckFlagCommonConfig.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckSourceCompiles.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/MacroAddFileDependencies.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-C.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-CXX.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/UnixPaths.cmake /home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/WriteBasicConfigVersionFile.cmake /home/sujan/CLionProjects/Talos/CMakeLists.txt /usr/lib/x86_64-linux-gnu/cmake/Qt6/3rdparty/kwin/FindXKB.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapAtomic.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapOpenGL.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapVulkanHeaders.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6ConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Dependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Targets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6VersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeature.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtFeatureCommon.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicAppleHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicCMakeVersionHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicDependencyHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFinalizerHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicFindPackageHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicPluginHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTargetHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicTestHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicToolHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicWalkLibsHelpers.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigExtras.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6CoreTools/Qt6CoreToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Gui/Qt6GuiVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaPlugins.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6MultimediaVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Multimedia/Qt6QGstreamerMediaPluginTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsMacros.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsVersionlessTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsAdditionalTargetInfo.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfig.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersion.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsConfigVersionImpl.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsDependencies.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets-none.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets.cmake /usr/lib/x86_64-linux-gnu/cmake/Qt6WidgetsTools/Qt6WidgetsToolsVersionlessTargets.cmake CMakeCache.txt CMakeFiles/3.26.4/CMakeCCompiler.cmake CMakeFiles/3.26.4/CMakeCXXCompiler.cmake CMakeFiles/3.26.4/CMakeSystem.cmake _deps/whisper-src/CMakeLists.txt _deps/whisper-src/cmake/build-info.cmake _deps/whisper-src/cmake/whisper-config.cmake.in _deps/whisper-src/cmake/whisper.pc.in _deps/whisper-src/ggml/CMakeLists.txt _deps/whisper-src/ggml/src/CMakeLists.txt _deps/whisper-src/src/CMakeLists.txt: phony
 
 
 #############################################

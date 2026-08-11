@@ -1,0 +1,21 @@
+# ninja log v5
+0	3	1786447480393390699	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-mkdir	8e73e14e740961af
+0	3	1786447480393390699	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-mkdir	8e73e14e740961af
+3	3089	1786447483477412667	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-download	bf0c96b37f094b0f
+3	3089	1786447483477412667	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-download	bf0c96b37f094b0f
+3089	3096	0	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-update	f1eb4ffca3f4a762
+3089	3096	0	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-update	f1eb4ffca3f4a762
+3096	3099	1786447483485412723	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-patch	d27d6000f980d0b8
+3096	3099	1786447483485412723	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-patch	d27d6000f980d0b8
+3099	3101	1786447483489412751	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-configure	73488d1ca9b80f57
+3099	3101	1786447483489412751	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-configure	73488d1ca9b80f57
+3102	3104	1786447483493412781	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-build	f987b1bfa2045f59
+3102	3104	1786447483493412781	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-build	f987b1bfa2045f59
+3104	3107	1786447483497412809	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-install	e442a048ce8445c9
+3104	3107	1786447483497412809	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-install	e442a048ce8445c9
+3107	3110	1786447483497412809	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-test	ee709ed57df21320
+3107	3110	1786447483497412809	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-test	ee709ed57df21320
+3110	3114	1786447483501412838	CMakeFiles/whisper-populate-complete	dcb794ea97ed6efb
+3110	3114	1786447483501412838	whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-done	dcb794ea97ed6efb
+3110	3114	1786447483501412838	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/CMakeFiles/whisper-populate-complete	dcb794ea97ed6efb
+3110	3114	1786447483501412838	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-subbuild/whisper-populate-prefix/src/whisper-populate-stamp/whisper-populate-done	dcb794ea97ed6efb

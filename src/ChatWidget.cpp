@@ -19,59 +19,27 @@
 #include <QThread>
 #include <QDebug>
 
-void ChatDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-    QString text = index.data(TextRole).toString();
-    bool isUser = index.data(IsUserRole).toBool();
-
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing);
-
-    int padding = 12;
-    int maxWidth = option.rect.width() * 0.75;
-
-    QFontMetrics fm(option.font);
-    QRect textBounding = fm.boundingRect(QRect(0, 0, maxWidth, 0), Qt::TextWordWrap, text);
-
-    int bubbleWidth = textBounding.width() + (padding * 2);
-    int bubbleHeight = textBounding.height() + (padding * 2);
-
-    int x = isUser ? (option.rect.right() - bubbleWidth - 10) : (option.rect.left() + 10);
-    int y = option.rect.top() + 5;
-
-    QRect bubbleRect(x, y, bubbleWidth, bubbleHeight);
-
-    QPainterPath path;
-    path.addRoundedRect(bubbleRect, 12, 12);
-
-    QColor bubbleColor = isUser ? QColor(0, 122, 255) : QColor(50, 50, 50);
-    painter->fillPath(path, bubbleColor);
-
-    painter->setPen(Qt::white);
-    QRect textRect = bubbleRect.adjusted(padding, padding, -padding, -padding);
-    painter->drawText(textRect, Qt::TextWordWrap, text);
-
-    painter->restore();
-}
-
-QSize ChatDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-    QString text = index.data(TextRole).toString();
-    int maxWidth = option.rect.width() * 0.75;
-
-    QFontMetrics fm(option.font);
-    QRect textBounding = fm.boundingRect(QRect(0, 0, maxWidth, 0), Qt::TextWordWrap, text);
-
-    return QSize(option.rect.width(), textBounding.height() + 24);
-}
-
 ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
     m_networkManager = new QNetworkAccessManager(this);
     m_overlay = new CaptureOverlay();
+
+    m_recorder = new AudioRecorder(this);
+    m_transcriber = new WhisperTranscriber("ggml-tiny.en.bin", this);
+
+    connect(m_transcriber, &WhisperTranscriber::transcriptionFinished, this, [this](const QString &text) {
+        m_micButton->setEnabled(true);
+        m_micButton->setText("🎤");
+        m_micButton->setStyleSheet("");
+        if (!text.isEmpty()) {
+            m_inputBox->setText(text);
+            m_inputBox->setFocus();
+        }
+    });
 
     auto *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(8, 8, 8, 8);
 
     m_listWidget = new QListWidget(this);
-    m_listWidget->setItemDelegate(new ChatDelegate(m_listWidget));
     m_listWidget->setSelectionMode(QAbstractItemView::NoSelection);
     m_listWidget->setFocusPolicy(Qt::NoFocus);
     m_listWidget->setStyleSheet("QListWidget { background: transparent; border: none; }");
@@ -81,16 +49,19 @@ ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
     m_inputBox->setPlaceholderText("Ask AI assistant...");
 
     m_captureButton = new QPushButton("Copy Below", this);
+    m_micButton = new QPushButton("🎤", this);
     m_sendButton = new QPushButton("Send", this);
 
     inputLayout->addWidget(m_inputBox);
     inputLayout->addWidget(m_captureButton);
+    inputLayout->addWidget(m_micButton);
     inputLayout->addWidget(m_sendButton);
 
     mainLayout->addWidget(m_listWidget);
     mainLayout->addLayout(inputLayout);
 
     connect(m_captureButton, &QPushButton::clicked, this, &ChatWidget::captureAndSetText);
+    connect(m_micButton, &QPushButton::clicked, this, &ChatWidget::toggleMicrophone);
 
     auto sendHandler = [this]() {
         QString text = m_inputBox->text().trimmed();
@@ -106,12 +77,26 @@ ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
     connect(m_inputBox, &QLineEdit::returnPressed, sendHandler);
 }
 
+void ChatWidget::toggleMicrophone() {
+    if (!m_isRecording) {
+        m_isRecording = true;
+        m_recorder->startRecording();
+        m_micButton->setText("⏹");
+        m_micButton->setStyleSheet("QPushButton { background-color: #c62828; color: white; }");
+    } else {
+        m_isRecording = false;
+        m_micButton->setEnabled(false);
+        m_micButton->setText("...");
+        m_micButton->setStyleSheet("QPushButton { background-color: #555555; color: white; }");
+
+        std::vector<float> pcmData = m_recorder->stopRecording();
+        m_transcriber->transcribeAsync(pcmData);
+    }
+}
+
 void ChatWidget::appendMessage(const QString &text, bool isUser) {
     auto *item = new QListWidgetItem(m_listWidget);
-    item->setData(SenderRole, isUser ? "User" : "AI");
-    item->setData(TextRole, text);
-    item->setData(IsUserRole, isUser);
-
+    item->setText((isUser ? "User: " : "AI: ") + text);
     m_listWidget->addItem(item);
     m_listWidget->scrollToBottom();
 
@@ -125,6 +110,7 @@ void ChatWidget::sendApiRequest() {
     m_inputBox->setEnabled(false);
     m_sendButton->setEnabled(false);
     if (m_captureButton) m_captureButton->setEnabled(false);
+    if (m_micButton) m_micButton->setEnabled(false);
 
     m_currentAiItem = nullptr;
     m_streamBuffer.clear();
@@ -177,16 +163,12 @@ void ChatWidget::handleReadyRead() {
 void ChatWidget::appendToCurrentAiMessage(const QString &deltaText) {
     if (!m_currentAiItem) {
         m_currentAiItem = new QListWidgetItem(m_listWidget);
-        m_currentAiItem->setData(SenderRole, "AI");
-        m_currentAiItem->setData(TextRole, deltaText);
-        m_currentAiItem->setData(IsUserRole, false);
+        m_currentAiItem->setText("AI: " + deltaText);
         m_listWidget->addItem(m_currentAiItem);
     } else {
-        QString currentText = m_currentAiItem->data(TextRole).toString();
-        m_currentAiItem->setData(TextRole, currentText + deltaText);
+        QString currentText = m_currentAiItem->text();
+        m_currentAiItem->setText(currentText + deltaText);
     }
-
-    m_currentAiItem->setSizeHint(m_listWidget->itemDelegate()->sizeHint(QStyleOptionViewItem(), m_listWidget->model()->index(m_listWidget->row(m_currentAiItem), 0)));
     m_listWidget->scrollToBottom();
 }
 
@@ -194,13 +176,14 @@ void ChatWidget::handleReplyFinished() {
     m_inputBox->setEnabled(true);
     m_sendButton->setEnabled(true);
     if (m_captureButton) m_captureButton->setEnabled(true);
+    if (m_micButton) m_micButton->setEnabled(true);
 
     if (m_currentReply && m_currentReply->error() != QNetworkReply::NoError) {
         appendMessage(QString("[Error: %1]").arg(m_currentReply->errorString()), false);
     } else if (m_currentAiItem) {
         QJsonObject assistantObj;
         assistantObj["role"] = "assistant";
-        assistantObj["content"] = m_currentAiItem->data(TextRole).toString();
+        assistantObj["content"] = m_currentAiItem->text().mid(4);
         m_conversationHistory.append(assistantObj);
     }
 

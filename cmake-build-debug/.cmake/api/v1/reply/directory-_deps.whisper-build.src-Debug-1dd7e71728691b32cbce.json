@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "_deps/whisper-build/src",
+		"source" : "cmake-build-debug/_deps/whisper-src/src"
+	}
+}

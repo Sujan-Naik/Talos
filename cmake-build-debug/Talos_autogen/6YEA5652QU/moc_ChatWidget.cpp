@@ -27,87 +27,15 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 namespace {
-struct qt_meta_stringdata_ChatDelegate_t {
-    uint offsetsAndSizes[2];
-    char stringdata0[13];
-};
-#define QT_MOC_LITERAL(ofs, len) \
-    uint(sizeof(qt_meta_stringdata_ChatDelegate_t::offsetsAndSizes) + ofs), len 
-Q_CONSTINIT static const qt_meta_stringdata_ChatDelegate_t qt_meta_stringdata_ChatDelegate = {
-    {
-        QT_MOC_LITERAL(0, 12)   // "ChatDelegate"
-    },
-    "ChatDelegate"
-};
-#undef QT_MOC_LITERAL
-} // unnamed namespace
-
-Q_CONSTINIT static const uint qt_meta_data_ChatDelegate[] = {
-
- // content:
-      10,       // revision
-       0,       // classname
-       0,    0, // classinfo
-       0,    0, // methods
-       0,    0, // properties
-       0,    0, // enums/sets
-       0,    0, // constructors
-       0,       // flags
-       0,       // signalCount
-
-       0        // eod
-};
-
-Q_CONSTINIT const QMetaObject ChatDelegate::staticMetaObject = { {
-    QMetaObject::SuperData::link<QStyledItemDelegate::staticMetaObject>(),
-    qt_meta_stringdata_ChatDelegate.offsetsAndSizes,
-    qt_meta_data_ChatDelegate,
-    qt_static_metacall,
-    nullptr,
-    qt_incomplete_metaTypeArray<qt_meta_stringdata_ChatDelegate_t,
-        // Q_OBJECT / Q_GADGET
-        QtPrivate::TypeAndForceComplete<ChatDelegate, std::true_type>
-    >,
-    nullptr
-} };
-
-void ChatDelegate::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
-{
-    (void)_o;
-    (void)_id;
-    (void)_c;
-    (void)_a;
-}
-
-const QMetaObject *ChatDelegate::metaObject() const
-{
-    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
-}
-
-void *ChatDelegate::qt_metacast(const char *_clname)
-{
-    if (!_clname) return nullptr;
-    if (!strcmp(_clname, qt_meta_stringdata_ChatDelegate.stringdata0))
-        return static_cast<void*>(this);
-    return QStyledItemDelegate::qt_metacast(_clname);
-}
-
-int ChatDelegate::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
-{
-    _id = QStyledItemDelegate::qt_metacall(_c, _id, _a);
-    return _id;
-}
-namespace {
 struct qt_meta_stringdata_ChatWidget_t {
-    uint offsetsAndSizes[16];
+    uint offsetsAndSizes[14];
     char stringdata0[11];
     char stringdata1[12];
     char stringdata2[1];
     char stringdata3[5];
-    char stringdata4[15];
+    char stringdata4[17];
     char stringdata5[16];
     char stringdata6[20];
-    char stringdata7[18];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_ChatWidget_t::offsetsAndSizes) + ofs), len 
@@ -117,19 +45,17 @@ Q_CONSTINIT static const qt_meta_stringdata_ChatWidget_t qt_meta_stringdata_Chat
         QT_MOC_LITERAL(11, 11),  // "messageSent"
         QT_MOC_LITERAL(23, 0),  // ""
         QT_MOC_LITERAL(24, 4),  // "text"
-        QT_MOC_LITERAL(29, 14),  // "sendApiRequest"
-        QT_MOC_LITERAL(44, 15),  // "handleReadyRead"
-        QT_MOC_LITERAL(60, 19),  // "handleReplyFinished"
-        QT_MOC_LITERAL(80, 17)   // "captureAndSetText"
+        QT_MOC_LITERAL(29, 16),  // "toggleMicrophone"
+        QT_MOC_LITERAL(46, 15),  // "handleReadyRead"
+        QT_MOC_LITERAL(62, 19)   // "handleReplyFinished"
     },
     "ChatWidget",
     "messageSent",
     "",
     "text",
-    "sendApiRequest",
+    "toggleMicrophone",
     "handleReadyRead",
-    "handleReplyFinished",
-    "captureAndSetText"
+    "handleReplyFinished"
 };
 #undef QT_MOC_LITERAL
 } // unnamed namespace
@@ -140,7 +66,7 @@ Q_CONSTINIT static const uint qt_meta_data_ChatWidget[] = {
       10,       // revision
        0,       // classname
        0,    0, // classinfo
-       5,   14, // methods
+       4,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -148,19 +74,17 @@ Q_CONSTINIT static const uint qt_meta_data_ChatWidget[] = {
        1,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,   44,    2, 0x06,    1 /* Public */,
+       1,    1,   38,    2, 0x06,    1 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       4,    0,   47,    2, 0x08,    3 /* Private */,
-       5,    0,   48,    2, 0x08,    4 /* Private */,
-       6,    0,   49,    2, 0x08,    5 /* Private */,
-       7,    0,   50,    2, 0x08,    6 /* Private */,
+       4,    0,   41,    2, 0x08,    3 /* Private */,
+       5,    0,   42,    2, 0x08,    4 /* Private */,
+       6,    0,   43,    2, 0x08,    5 /* Private */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::QString,    3,
 
  // slots: parameters
-    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -180,13 +104,11 @@ Q_CONSTINIT const QMetaObject ChatWidget::staticMetaObject = { {
         // method 'messageSent'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        // method 'sendApiRequest'
+        // method 'toggleMicrophone'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'handleReadyRead'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'handleReplyFinished'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'captureAndSetText'
         QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
     nullptr
@@ -199,10 +121,9 @@ void ChatWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         (void)_t;
         switch (_id) {
         case 0: _t->messageSent((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 1: _t->sendApiRequest(); break;
+        case 1: _t->toggleMicrophone(); break;
         case 2: _t->handleReadyRead(); break;
         case 3: _t->handleReplyFinished(); break;
-        case 4: _t->captureAndSetText(); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -236,13 +157,13 @@ int ChatWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 5)
+        if (_id < 4)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 5;
+        _id -= 4;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 5)
+        if (_id < 4)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 5;
+        _id -= 4;
     }
     return _id;
 }

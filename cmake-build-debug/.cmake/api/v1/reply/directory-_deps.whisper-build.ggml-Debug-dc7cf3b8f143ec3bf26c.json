@@ -1,0 +1,105 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"cmake-build-debug/_deps/whisper-src/ggml/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 233,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 236,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"_deps/whisper-build/ggml/src/libggml.so"
+			],
+			"targetId" : "ggml::@adb943a8c98c89f2306b",
+			"targetIndex" : 3,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-alloc.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-backend.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-blas.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-cann.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-cuda.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-kompute.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-metal.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-rpc.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-sycl.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-vulkan.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"_deps/whisper-build/ggml/src/libggml.so"
+			],
+			"targetId" : "ggml::@adb943a8c98c89f2306b",
+			"targetIndex" : 3,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-alloc.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-backend.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-blas.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-cann.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-cuda.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-kompute.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-metal.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-rpc.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-sycl.h",
+				"cmake-build-debug/_deps/whisper-src/ggml/include/ggml-vulkan.h"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "_deps/whisper-build/ggml",
+		"source" : "cmake-build-debug/_deps/whisper-src/ggml"
+	}
+}
