@@ -3,7 +3,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPainter>
-#include <QPainterPath>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -20,9 +19,27 @@
 #include <QThread>
 #include <QDebug>
 #include <cmath>
-#include <numeric>
+#include <QFile>
+#include <QWebEnginePage>
+#include <QKeyEvent>
 
 ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
+    setAttribute(Qt::WA_TranslucentBackground, true);
+    loadExternalStyleSheet();
+
+    m_webEngineView = new QWebEngineView(this);
+    m_webEngineView->setObjectName("webEngineView");
+    m_webEngineView->page()->setBackgroundColor(Qt::transparent);
+
+    connect(m_webEngineView, &QWebEngineView::loadFinished, this, [this](bool ok) {
+        m_isPageLoaded = ok;
+        if (ok && m_holeRect.isValid()) {
+            setHoleRect(m_holeRect);
+        }
+    });
+
+    m_webEngineView->setHtml(getInitialHtml());
+
     m_networkManager = new QNetworkAccessManager(this);
     m_overlay = new CaptureOverlay();
 
@@ -37,42 +54,30 @@ ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
     connect(m_transcriber, &WhisperTranscriber::transcriptionFinished, this, [this](const QString &text) {
         m_micButton->setEnabled(true);
         m_micButton->setText("🎤");
-        m_micButton->setStyleSheet("");
+        m_micButton->setObjectName("");
+        m_micButton->setStyle(m_micButton->style());
         if (!text.isEmpty()) {
-            m_inputBox->setText(text);
+            m_inputBox->setPlainText(text);
             m_inputBox->setFocus();
         }
     });
 
-    auto *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(8, 8, 8, 8);
-
-    m_listWidget = new QListWidget(this);
-    m_listWidget->setSelectionMode(QAbstractItemView::NoSelection);
-    m_listWidget->setFocusPolicy(Qt::NoFocus);
-    m_listWidget->setStyleSheet("QListWidget { background: transparent; border: none; }");
-
-    auto *inputLayout = new QHBoxLayout();
-    m_inputBox = new QLineEdit(this);
+    m_inputBox = new QTextEdit(this);
     m_inputBox->setPlaceholderText("Ask AI assistant...");
+    m_inputBox->setLineWrapMode(QTextEdit::WidgetWidth);
+    m_inputBox->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_inputBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     m_captureButton = new QPushButton("Copy Below", this);
     m_micButton = new QPushButton("🎤", this);
     m_sendButton = new QPushButton("Send", this);
-
-    inputLayout->addWidget(m_inputBox);
-    inputLayout->addWidget(m_captureButton);
-    inputLayout->addWidget(m_micButton);
-    inputLayout->addWidget(m_sendButton);
-
-    mainLayout->addWidget(m_listWidget);
-    mainLayout->addLayout(inputLayout);
+    m_sendButton->setObjectName("sendButton");
 
     connect(m_captureButton, &QPushButton::clicked, this, &ChatWidget::captureAndSetText);
     connect(m_micButton, &QPushButton::clicked, this, &ChatWidget::toggleMicrophone);
 
     auto sendHandler = [this]() {
-        QString text = m_inputBox->text().trimmed();
+        QString text = m_inputBox->toPlainText().trimmed();
         if (!text.isEmpty()) {
             appendMessage(text, true);
             emit messageSent(text);
@@ -82,7 +87,233 @@ ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
     };
 
     connect(m_sendButton, &QPushButton::clicked, sendHandler);
-    connect(m_inputBox, &QLineEdit::returnPressed, sendHandler);
+
+    m_inputBox->installEventFilter(this);
+}
+
+void ChatWidget::loadExternalStyleSheet() {
+    QFile styleFile(":/style/ChatWidget.css");
+    if (!styleFile.exists()) {
+        styleFile.setFileName("ChatWidget.css");
+    }
+    if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
+        QString styleSheet = QLatin1String(styleFile.readAll());
+        setStyleSheet(styleSheet);
+        styleFile.close();
+    }
+}
+
+QString ChatWidget::getInitialHtml() const {
+    return R"html(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: transparent !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #F4F4F5;
+            font-size: 14px;
+            padding: 12px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        #obstacle {
+            display: none;
+            float: left;
+            shape-margin: 10px;
+            pointer-events: none;
+        }
+
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            line-height: 1.4;
+            word-break: break-word;
+            white-space: pre-wrap;
+            clear: both;
+        }
+
+        .message.user {
+            background-color: #007AFF;
+            color: #FFFFFF;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.ai {
+            background-color: #323232;
+            color: #F4F4F5;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="obstacle"></div>
+    <div id="chat-container"></div>
+
+    <script>
+        window.chatApp = {
+            setObstacle: function(config) {
+                const obs = document.getElementById('obstacle');
+                if (!config.active) {
+                    obs.style.display = 'none';
+                    obs.style.width = '0px';
+                    obs.style.height = '0px';
+                    return;
+                }
+                obs.style.display = 'block';
+                obs.style.width = config.width + 'px';
+                obs.style.height = config.height + 'px';
+                obs.style.shapeOutside = `rect(0px ${config.width}px ${config.height}px 0px)`;
+            },
+
+            addMessage: function(data) {
+                const container = document.getElementById('chat-container');
+                let div = null;
+
+                if (data.isDelta) {
+                    const messages = container.getElementsByClassName('message ai');
+                    if (messages.length > 0) {
+                        div = messages[messages.length - 1];
+                    }
+                }
+
+                if (!div) {
+                    div = document.createElement('div');
+                    div.className = 'message ' + (data.isUser ? 'user' : 'ai');
+                    container.appendChild(div);
+                }
+
+                div.textContent += data.text;
+                window.scrollTo(0, document.body.scrollHeight);
+            },
+
+            clear: function() {
+                document.getElementById('chat-container').innerHTML = '';
+            }
+        };
+    </script>
+</body>
+</html>
+    )html";
+}
+
+void ChatWidget::setHoleRect(const QRect &rect) {
+    if (m_holeRect == rect) return;
+
+    m_previousHoleRect = m_holeRect;
+    m_holeRect = rect;
+
+    updateClippingMask();
+
+    if (m_isPageLoaded) {
+        QJsonObject holeObj;
+        holeObj["active"] = m_holeRect.isValid() && !m_holeRect.isEmpty();
+        holeObj["width"] = m_holeRect.width();
+        holeObj["height"] = m_holeRect.height();
+
+        QString jsonParam = QString::fromUtf8(QJsonDocument(holeObj).toJson(QJsonDocument::Compact));
+        m_webEngineView->page()->runJavaScript(QString("window.chatApp.setObstacle(%1);").arg(jsonParam));
+    }
+
+    update();
+}
+
+void ChatWidget::updateClippingMask() {
+    clearMask();
+
+    if (m_holeRect.isValid() && !m_holeRect.isEmpty()) {
+        QRegion fullRegion(rect());
+        QRegion holeRegion(m_holeRect);
+        setMask(fullRegion.subtracted(holeRegion));
+    }
+}
+
+void ChatWidget::resizeEvent(QResizeEvent *event) {
+    QWidget::resizeEvent(event);
+    updateSubWidgetLayout();
+    updateClippingMask();
+}
+
+void ChatWidget::paintEvent(QPaintEvent *event) {
+    Q_UNUSED(event);
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    painter.setCompositionMode(QPainter::CompositionMode_Source);
+    painter.fillRect(rect(), Qt::transparent);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+    if (m_holeRect.isValid() && !m_holeRect.isEmpty()) {
+        painter.setCompositionMode(QPainter::CompositionMode_Clear);
+        painter.fillRect(m_holeRect, Qt::transparent);
+        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    }
+}
+
+void ChatWidget::updateSubWidgetLayout() {
+    int margin = 10;
+    int inputHeight = 40;
+    int btnWidth = 85;
+    int micWidth = 40;
+    int sendWidth = 60;
+    int spacing = 6;
+
+    int w = width();
+    int h = height();
+
+    int inputY = h - inputHeight - margin;
+    int inputX = margin;
+    int totalInputWidth = w - (margin * 2);
+
+    int availableInputBoxWidth = totalInputWidth - (btnWidth + micWidth + sendWidth + (spacing * 3));
+
+    m_inputBox->setGeometry(inputX, inputY, availableInputBoxWidth, inputHeight);
+    m_captureButton->setGeometry(inputX + availableInputBoxWidth + spacing, inputY, btnWidth, inputHeight);
+    m_micButton->setGeometry(inputX + availableInputBoxWidth + btnWidth + (spacing * 2), inputY, micWidth, inputHeight);
+    m_sendButton->setGeometry(inputX + availableInputBoxWidth + btnWidth + micWidth + (spacing * 3), inputY, sendWidth, inputHeight);
+
+    int chatY = margin;
+    int chatHeight = inputY - (margin * 2);
+
+    m_webEngineView->setGeometry(margin, chatY, w - (margin * 2), chatHeight);
+}
+
+bool ChatWidget::eventFilter(QObject *watched, QEvent *event) {
+    if (watched == m_inputBox && event->type() == QEvent::KeyPress) {
+        auto *keyEvent = dynamic_cast<QKeyEvent*>(event);
+        if (keyEvent && (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) &&
+            !(keyEvent->modifiers() & Qt::ShiftModifier)) {
+            QString text = m_inputBox->toPlainText().trimmed();
+            if (!text.isEmpty()) {
+                appendMessage(text, true);
+                emit messageSent(text);
+                sendApiRequest();
+                m_inputBox->clear();
+            }
+            return true;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void ChatWidget::toggleMicrophone() {
@@ -95,7 +326,8 @@ void ChatWidget::toggleMicrophone() {
         m_vadTimer->start();
 
         m_micButton->setText("⏹ Listening...");
-        m_micButton->setStyleSheet("QPushButton { background-color: #c62828; color: white; }");
+        m_micButton->setObjectName("micButtonListening");
+        m_micButton->setStyle(m_micButton->style());
     } else {
         stopMicrophoneAndTranscribe();
     }
@@ -135,35 +367,37 @@ void ChatWidget::stopMicrophoneAndTranscribe() {
 
     m_micButton->setEnabled(false);
     m_micButton->setText("Transcribing...");
-    m_micButton->setStyleSheet("QPushButton { background-color: #555555; color: white; }");
+    m_micButton->setObjectName("");
+    m_micButton->setStyle(m_micButton->style());
 
     std::vector<float> pcmData = m_recorder->stopRecording();
     m_transcriber->transcribeAsync(pcmData);
 }
 
-void ChatWidget::appendMessageAsUser(const QString &text){
-    auto *item = new QListWidgetItem(m_listWidget);
-    item->setText(("User: ") + text);
-    m_listWidget->addItem(item);
-//    m_listWidget->scrollToBottom();
-
-    QJsonObject msgObj;
-    msgObj["role"] = "user";
-    msgObj["content"] = text;
-    m_conversationHistory.append(msgObj);
+void ChatWidget::appendMessageAsUser(const QString &text) {
+    appendMessage(text, true);
 }
 
+void ChatWidget::appendMessageAsAi(const QString &text) {
+    appendMessage(text, false);
+}
 
 void ChatWidget::appendMessage(const QString &text, bool isUser) {
-    auto *item = new QListWidgetItem(m_listWidget);
-    item->setText((isUser ? "User: " : "AI: ") + text);
-    m_listWidget->addItem(item);
-//    m_listWidget->scrollToBottom();
+    if (m_isPageLoaded) {
+        QJsonObject msgObj;
+        msgObj["text"] = text;
+        msgObj["isUser"] = isUser;
+        msgObj["isDelta"] = false;
 
-    QJsonObject msgObj;
-    msgObj["role"] = isUser ? "user" : "assistant";
-    msgObj["content"] = text;
-    m_conversationHistory.append(msgObj);
+        QString jsonParam = QString::fromUtf8(QJsonDocument(msgObj).toJson(QJsonDocument::Compact));
+        m_webEngineView->page()->runJavaScript(QString("window.chatApp.addMessage(%1);").arg(jsonParam));
+    }
+
+    QJsonObject historyObj;
+    historyObj["role"] = isUser ? "user" : "assistant";
+    historyObj["content"] = text;
+    m_conversationHistory.append(historyObj);
+    m_isStreamingAi = !isUser;
 }
 
 void ChatWidget::sendApiRequest() {
@@ -172,7 +406,6 @@ void ChatWidget::sendApiRequest() {
     if (m_captureButton) m_captureButton->setEnabled(false);
     if (m_micButton) m_micButton->setEnabled(false);
 
-    m_currentAiItem = nullptr;
     m_streamBuffer.clear();
 
     QNetworkRequest request(QUrl("http://127.0.0.1:8080/v1/chat/completions"));
@@ -221,15 +454,27 @@ void ChatWidget::handleReadyRead() {
 }
 
 void ChatWidget::appendToCurrentAiMessage(const QString &deltaText) {
-    if (!m_currentAiItem) {
-        m_currentAiItem = new QListWidgetItem(m_listWidget);
-        m_currentAiItem->setText("AI: " + deltaText);
-        m_listWidget->addItem(m_currentAiItem);
+    if (!m_isStreamingAi) {
+        appendMessage(deltaText, false);
     } else {
-        QString currentText = m_currentAiItem->text();
-        m_currentAiItem->setText(currentText + deltaText);
+        if (m_isPageLoaded) {
+            QJsonObject msgObj;
+            msgObj["text"] = deltaText;
+            msgObj["isUser"] = false;
+            msgObj["isDelta"] = true;
+
+            QString jsonParam = QString::fromUtf8(QJsonDocument(msgObj).toJson(QJsonDocument::Compact));
+            m_webEngineView->page()->runJavaScript(QString("window.chatApp.addMessage(%1);").arg(jsonParam));
+        }
+
+        if (!m_conversationHistory.isEmpty()) {
+            QJsonObject lastObj = m_conversationHistory.last().toObject();
+            if (lastObj["role"].toString() == "assistant") {
+                lastObj["content"] = lastObj["content"].toString() + deltaText;
+                m_conversationHistory.last() = lastObj;
+            }
+        }
     }
-//    m_listWidget->scrollToBottom();
 }
 
 void ChatWidget::handleReplyFinished() {
@@ -237,14 +482,10 @@ void ChatWidget::handleReplyFinished() {
     m_sendButton->setEnabled(true);
     if (m_captureButton) m_captureButton->setEnabled(true);
     if (m_micButton) m_micButton->setEnabled(true);
+    m_isStreamingAi = false;
 
     if (m_currentReply && m_currentReply->error() != QNetworkReply::NoError) {
         appendMessage(QString("[Error: %1]").arg(m_currentReply->errorString()), false);
-    } else if (m_currentAiItem) {
-        QJsonObject assistantObj;
-        assistantObj["role"] = "assistant";
-        assistantObj["content"] = m_currentAiItem->text().mid(4);
-        m_conversationHistory.append(assistantObj);
     }
 
     if (m_currentReply) {
@@ -280,7 +521,6 @@ QString performScreenOCR(const QImage &srcImage) {
 void ChatWidget::captureAndSetText() {
     m_captureButton->setEnabled(false);
     m_captureButton->setText("Reading...");
-    m_captureButton->setStyleSheet("QPushButton { background-color: #555555; color: white; }");
     qApp->processEvents();
 
     QWidget *topWindow = this->window();
@@ -331,24 +571,24 @@ void ChatWidget::captureAndSetText() {
 
     m_overlay->stopScan();
 
-    qDebug() << "=== COPIED OCR TEXT START ===";
-    qDebug().noquote() << extractedText;
-    qDebug() << "=== COPIED OCR TEXT END ===";
-
     if (!extractedText.isEmpty()) {
-        m_inputBox->setText(extractedText);
+        QString currentText = m_inputBox->toPlainText();
+        m_inputBox->setPlainText(currentText + extractedText);
         m_inputBox->setFocus();
 
         m_captureButton->setText("Copied!");
-        m_captureButton->setStyleSheet("QPushButton { background-color: #2e7d32; color: white; }");
+        m_captureButton->setObjectName("captureButtonSuccess");
+        m_captureButton->setStyle(m_captureButton->style());
     } else {
         m_captureButton->setText("No Text Found");
-        m_captureButton->setStyleSheet("QPushButton { background-color: #c62828; color: white; }");
+        m_captureButton->setObjectName("captureButtonError");
+        m_captureButton->setStyle(m_captureButton->style());
     }
 
     QTimer::singleShot(1500, this, [this]() {
         m_captureButton->setEnabled(true);
         m_captureButton->setText("Copy Below");
-        m_captureButton->setStyleSheet("");
+        m_captureButton->setObjectName("");
+        m_captureButton->setStyle(m_captureButton->style());
     });
 }

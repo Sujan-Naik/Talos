@@ -18,15 +18,16 @@
 #include <algorithm>
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::WindowMinMaxButtonsHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowMinMaxButtonsHint);
     setAttribute(Qt::WA_TranslucentBackground, true);
     setMouseTracking(true);
 
     resize(800, 600);
+    m_savedNormalGeometry = QRect(100, 100, 800, 600);
     m_holeRect = QRect(200, 150, 400, 300);
+    m_previousHoleRect = m_holeRect;
 
     m_chatWidget = new ChatWidget(this);
-    m_chatWidget->show();
 
     updateChatGeometry();
     updateClickThroughMask();
@@ -50,7 +51,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     connect(m_wakeWordDetector, &WakeWordDetector::wakeWordDetected, this, [this](float confidence) {
         qDebug() << "[Talos] Wake Word Detected! Confidence:" << confidence;
 
-        // Defer everything to the next event-loop iteration
         QTimer::singleShot(0, this, [this]() {
             m_appState = StateTriggered;
             update();
@@ -109,17 +109,51 @@ void MainWindow::chooseAudioDevice() {
     }
 }
 
+void MainWindow::toggleHole(bool enabled) {
+    m_holeEnabled = enabled;
+    updateChatGeometry();
+    updateClickThroughMask();
+
+    if (!m_holeEnabled) {
+        clearMask();
+    }
+
+    update();
+    repaint();
+
+    if (m_chatWidget) {
+        m_chatWidget->update();
+        m_chatWidget->repaint();
+    }
+}
+
+void MainWindow::resetHole() {
+    int w = width();
+    int h = height();
+    m_previousHoleRect = m_holeRect;
+    m_holeRect = QRect((w - 400) / 2, std::max(50, (h - 300) / 2), 400, 300);
+    m_holeEnabled = true;
+
+    updateChatGeometry();
+    updateClickThroughMask();
+
+    update();
+    repaint();
+
+    if (m_chatWidget) {
+        m_chatWidget->update();
+        m_chatWidget->repaint();
+    }
+}
+
 void MainWindow::onSpeechCaptureFinished() {
     qDebug() << "[Talos] onSpeechCaptureFinished entered";
     m_appState = StateProcessing;
     update();
 
-    qDebug() << "[Talos] calling stopBufferingSpeech...";
     std::vector<float> pcmData = m_audioRecorder->stopBufferingSpeech();
-    qDebug() << "[Talos] stopBufferingSpeech returned, samples:" << pcmData.size();
 
     if (pcmData.empty()) {
-        qDebug() << "[Talos] Captured audio buffer was empty.";
         m_wakeWordDetector->reset();
         m_appState = StateListening;
         update();
@@ -127,20 +161,14 @@ void MainWindow::onSpeechCaptureFinished() {
         return;
     }
 
-    qDebug() << "[Talos] starting QtConcurrent for Whisper...";
-
     auto *watcher = new QFutureWatcher<QString>(this);
     connect(watcher, &QFutureWatcher<QString>::finished, this, [this, watcher]() {
-        qDebug() << "[Talos] Whisper future finished";
         QString transcribedText = watcher->result();
         watcher->deleteLater();
 
         if (!transcribedText.trimmed().isEmpty()) {
-            qDebug() << "[Talos] Transcription result:" << transcribedText;
             m_chatWidget->appendMessageAsUser(transcribedText);
             m_chatWidget->sendApiRequest();
-        } else {
-            qDebug() << "[Talos] Could not recognize speech.";
         }
 
         m_wakeWordDetector->reset();
@@ -150,47 +178,46 @@ void MainWindow::onSpeechCaptureFinished() {
     });
 
     QFuture<QString> future = QtConcurrent::run([pcmData, this]() {
-        qDebug() << "[Talos] Whisper thread started, samples:" << pcmData.size();
-        QString result = m_transcriber->transcribe(pcmData);
-        qDebug() << "[Talos] Whisper thread finished";
-        return result;
+        return m_transcriber->transcribe(pcmData);
     });
     watcher->setFuture(future);
-    qDebug() << "[Talos] future set, waiting...";
 }
 
 void MainWindow::updateChatGeometry() {
     if (!m_chatWidget) return;
 
-    int chatX = 10;
-    int chatY = 45;
-    int chatWidth = m_holeRect.left() - 20;
-    int chatHeight = height() - chatY - 10;
-
-    if (chatWidth < 150) {
-        chatWidth = 150;
-    }
+    int titleBarHeight = 35;
+    int chatX = 0;
+    int chatY = titleBarHeight;
+    int chatWidth = width();
+    int chatHeight = height() - titleBarHeight;
 
     m_chatWidget->setGeometry(chatX, chatY, chatWidth, chatHeight);
+
+    QRect localHole = m_holeEnabled ? m_holeRect.translated(-chatX, -chatY) : QRect();
+    m_chatWidget->setHoleRect(localHole);
 }
 
 void MainWindow::updateClickThroughMask() {
     int w = width();
     int h = height();
 
-    QRegion fullRegion(0, 0, w, h);
+    if (m_holeEnabled && m_holeRect.isValid()) {
+        QRegion fullRegion(0, 0, w, h);
+        int margin = m_handleSize / 2;
+        QRect passthroughRect = m_holeRect.adjusted(margin, margin, -margin, -margin);
+        QRegion holeRegion(passthroughRect);
+        QRegion interactiveMask = fullRegion.subtracted(holeRegion);
 
-    int margin = m_handleSize / 2;
-    QRect passthroughRect = m_holeRect.adjusted(margin, margin, -margin, -margin);
-
-    QRegion holeRegion(passthroughRect);
-    QRegion interactiveMask = fullRegion.subtracted(holeRegion);
-
-    setMask(interactiveMask);
+        clearMask();
+        setMask(interactiveMask);
+    } else {
+        clearMask();
+    }
 }
 
 MainWindow::Handle MainWindow::handleAt(const QPoint &pos) const {
-    if (!isMaximized()) {
+    if (!isMaximized() && !isFullScreen()) {
         int bw = m_borderResizeWidth;
         int w = width();
         int h = height();
@@ -209,6 +236,8 @@ MainWindow::Handle MainWindow::handleAt(const QPoint &pos) const {
         if (left) return Handle::WinLeft;
         if (right) return Handle::WinRight;
     }
+
+    if (!m_holeEnabled) return Handle::None;
 
     int hs = m_handleSize;
 
@@ -264,9 +293,13 @@ void MainWindow::updateCursorShape(const QPoint &pos) {
 }
 
 void MainWindow::toggleMaximize() {
-    if (isMaximized()) {
+    if (isMaximized() || isFullScreen()) {
         showNormal();
+        if (m_savedNormalGeometry.isValid()) {
+            setGeometry(m_savedNormalGeometry);
+        }
     } else {
+        m_savedNormalGeometry = geometry();
         showMaximized();
     }
 }
@@ -290,13 +323,21 @@ void MainWindow::mousePressEvent(QMouseEvent *event) {
             showMinimized();
             return;
         }
+        if (m_toggleHoleBtnRect.contains(event->pos())) {
+            toggleHole(!m_holeEnabled);
+            return;
+        }
+        if (m_resetHoleBtnRect.contains(event->pos())) {
+            resetHole();
+            return;
+        }
 
         m_activeHandle = handleAt(event->pos());
         if (m_activeHandle != Handle::None) {
             m_dragStartPos = event->globalPosition().toPoint();
             m_dragStartHoleRect = m_holeRect;
             m_dragStartWinGeometry = geometry();
-        } else if (m_titleBarRect.contains(event->pos()) && !isMaximized()) {
+        } else if (m_titleBarRect.contains(event->pos())) {
             m_isDraggingWindow = true;
             m_windowDragStartPos = event->globalPosition().toPoint() - frameGeometry().topLeft();
         }
@@ -307,7 +348,9 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton && m_titleBarRect.contains(event->pos())) {
         if (!m_closeButtonRect.contains(event->pos()) &&
             !m_maxButtonRect.contains(event->pos()) &&
-            !m_minButtonRect.contains(event->pos())) {
+            !m_minButtonRect.contains(event->pos()) &&
+            !m_toggleHoleBtnRect.contains(event->pos()) &&
+            !m_resetHoleBtnRect.contains(event->pos())) {
             toggleMaximize();
         }
     }
@@ -315,6 +358,26 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event) {
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event) {
     if (m_isDraggingWindow) {
+        if (isMaximized() || isFullScreen()) {
+            QPoint globalPos = event->globalPosition().toPoint();
+            int dragDistanceY = globalPos.y() - m_windowDragStartPos.y();
+
+            if (dragDistanceY > 5 || globalPos.y() > 10) {
+                qreal relativeX = static_cast<qreal>(globalPos.x()) / width();
+
+                showNormal();
+
+                int newWidth = m_savedNormalGeometry.isValid() ? m_savedNormalGeometry.width() : 800;
+                int newHeight = m_savedNormalGeometry.isValid() ? m_savedNormalGeometry.height() : 600;
+                int newX = globalPos.x() - static_cast<int>(newWidth * relativeX);
+                int newY = globalPos.y() - 15;
+
+                setGeometry(newX, newY, newWidth, newHeight);
+                m_windowDragStartPos = QPoint(static_cast<int>(newWidth * relativeX), 15);
+            }
+            return;
+        }
+
         move(event->globalPosition().toPoint() - m_windowDragStartPos);
         return;
     }
@@ -343,6 +406,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event) {
 
         if (newWin.width() >= 200 && newWin.height() >= 150) {
             setGeometry(newWin);
+            m_savedNormalGeometry = newWin;
         }
         return;
     }
@@ -365,6 +429,7 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event) {
     if (newHole.width() >= minSize && newHole.height() >= minSize &&
         newHole.left() >= 0 && newHole.top() >= 35 &&
         newHole.right() <= width() && newHole.bottom() <= height()) {
+        m_previousHoleRect = m_holeRect;
         m_holeRect = newHole;
         updateChatGeometry();
         updateClickThroughMask();
@@ -376,6 +441,9 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
         m_activeHandle = Handle::None;
         m_isDraggingWindow = false;
+        if (!isMaximized() && !isFullScreen()) {
+            m_savedNormalGeometry = geometry();
+        }
         updateCursorShape(event->pos());
     }
 }
@@ -385,26 +453,27 @@ void MainWindow::changeEvent(QEvent *event) {
     if (event->type() == QEvent::WindowStateChange) {
         updateChatGeometry();
         updateClickThroughMask();
-        update();
     }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
     QWidget::resizeEvent(event);
+    if (!isMaximized() && !isFullScreen() && !m_isDraggingWindow) {
+        m_savedNormalGeometry = geometry();
+    }
     updateChatGeometry();
     updateClickThroughMask();
+
+    m_chatWidget->repaint();
 }
 
 void MainWindow::paintEvent(QPaintEvent *event) {
     Q_UNUSED(event);
 
     QPainter painter(this);
-    painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(rect(), Qt::transparent);
-    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    painter.setRenderHint(QPainter::Antialiasing);
 
     int w = width();
-    int h = height();
 
     m_titleBarRect = QRect(0, 0, w, 35);
     painter.fillRect(m_titleBarRect, QColor(30, 30, 30, 240));
@@ -427,42 +496,47 @@ void MainWindow::paintEvent(QPaintEvent *event) {
     painter.drawEllipse(QPointF(20, 17.5), 5, 5);
 
     painter.setPen(Qt::white);
-    painter.drawText(QRect(35, 0, 300, 35), Qt::AlignVCenter | Qt::AlignLeft, "Talos Overlay — " + statusText);
+    painter.drawText(QRect(35, 0, 220, 35), Qt::AlignVCenter | Qt::AlignLeft, "Talos Overlay — " + statusText);
 
-    m_closeButtonRect = QRect(w - 35, 5, 30, 25);
-    m_maxButtonRect   = QRect(w - 70, 5, 30, 25);
-    m_minButtonRect   = QRect(w - 105, 5, 30, 25);
+    m_closeButtonRect   = QRect(w - 35, 5, 30, 25);
+    m_maxButtonRect     = QRect(w - 70, 5, 30, 25);
+    m_minButtonRect     = QRect(w - 105, 5, 30, 25);
+    m_resetHoleBtnRect  = QRect(w - 185, 5, 70, 25);
+    m_toggleHoleBtnRect = QRect(w - 275, 5, 85, 25);
+
+    painter.fillRect(m_toggleHoleBtnRect, m_holeEnabled ? QColor(0, 122, 255) : QColor(70, 70, 70));
+    painter.drawText(m_toggleHoleBtnRect, Qt::AlignCenter, m_holeEnabled ? "Hole: ON" : "Hole: OFF");
+
+    painter.fillRect(m_resetHoleBtnRect, QColor(60, 60, 60));
+    painter.drawText(m_resetHoleBtnRect, Qt::AlignCenter, "Redraw");
 
     painter.fillRect(m_closeButtonRect, QColor(200, 40, 40));
     painter.drawText(m_closeButtonRect, Qt::AlignCenter, "X");
 
     painter.fillRect(m_maxButtonRect, QColor(60, 60, 60));
-    painter.drawText(m_maxButtonRect, Qt::AlignCenter, isMaximized() ? "❐" : "□");
+    painter.drawText(m_maxButtonRect, Qt::AlignCenter, (isMaximized() || isFullScreen()) ? "❐" : "□");
 
     painter.fillRect(m_minButtonRect, QColor(60, 60, 60));
     painter.drawText(m_minButtonRect, Qt::AlignCenter, "_");
 
-    QColor overlayColor(40, 40, 40, 180);
-    int topBound = std::max(35, m_holeRect.top());
+    if (m_holeEnabled) {
+        QColor accentBlue(0, 122, 255, 200);
 
-    painter.fillRect(0, 35, w, topBound - 35, overlayColor);
-    painter.fillRect(0, m_holeRect.bottom(), w, h - m_holeRect.bottom(), overlayColor);
-    painter.fillRect(0, topBound, m_holeRect.left(), m_holeRect.height(), overlayColor);
-    painter.fillRect(m_holeRect.right(), topBound, w - m_holeRect.right(), m_holeRect.height(), overlayColor);
+        painter.setPen(QPen(accentBlue, 2, Qt::SolidLine));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(m_holeRect);
 
-    painter.setPen(QPen(Qt::red, 2));
-    painter.drawRect(m_holeRect);
+        int hs = m_handleSize;
+        painter.setBrush(accentBlue);
+        painter.setPen(Qt::NoPen);
 
-    int hs = m_handleSize;
-    painter.setBrush(Qt::white);
-    painter.setPen(QPen(Qt::red, 1));
-
-    painter.drawRect(m_holeRect.left() - hs/2, m_holeRect.top() - hs/2, hs, hs);
-    painter.drawRect(m_holeRect.right() - hs/2, m_holeRect.top() - hs/2, hs, hs);
-    painter.drawRect(m_holeRect.left() - hs/2, m_holeRect.bottom() - hs/2, hs, hs);
-    painter.drawRect(m_holeRect.right() - hs/2, m_holeRect.bottom() - hs/2, hs, hs);
+        painter.drawRoundedRect(QRect(m_holeRect.left() - hs/2, m_holeRect.top() - hs/2, hs, hs), 2, 2);
+        painter.drawRoundedRect(QRect(m_holeRect.right() - hs/2, m_holeRect.top() - hs/2, hs, hs), 2, 2);
+        painter.drawRoundedRect(QRect(m_holeRect.left() - hs/2, m_holeRect.bottom() - hs/2, hs, hs), 2, 2);
+        painter.drawRoundedRect(QRect(m_holeRect.right() - hs/2, m_holeRect.bottom() - hs/2, hs, hs), 2, 2);
+    }
 }
 
-QRect MainWindow::holeRect()  {
+QRect MainWindow::holeRect() const {
     return m_holeRect;
 }

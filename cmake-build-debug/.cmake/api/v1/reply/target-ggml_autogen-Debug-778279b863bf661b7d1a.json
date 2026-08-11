@@ -1,0 +1,71 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"cmake-build-debug/_deps/whisper-src/ggml/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"id" : "ggml_autogen_timestamp_deps::@adb943a8c98c89f2306b"
+		}
+	],
+	"id" : "ggml_autogen::@adb943a8c98c89f2306b",
+	"isGeneratorProvided" : true,
+	"name" : "ggml_autogen",
+	"paths" : 
+	{
+		"build" : "_deps/whisper-build/ggml/src",
+		"source" : "cmake-build-debug/_deps/whisper-src/ggml/src"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1,
+				2
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/_deps/whisper-build/ggml/src/CMakeFiles/ggml_autogen",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/_deps/whisper-build/ggml/src/CMakeFiles/ggml_autogen.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "cmake-build-debug/_deps/whisper-build/ggml/src/ggml_autogen/timestamp.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "UTILITY"
+}

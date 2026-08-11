@@ -1,0 +1,230 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				},
+				{
+					"build" : "_deps/whisper-build",
+					"childIndexes" : 
+					[
+						2,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.whisper-build-Debug-d7ba396f003f9e02824d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "cmake-build-debug/_deps/whisper-src"
+				},
+				{
+					"build" : "_deps/whisper-build/ggml",
+					"childIndexes" : 
+					[
+						3
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-_deps.whisper-build.ggml-Debug-dc7cf3b8f143ec3bf26c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 2,
+					"source" : "cmake-build-debug/_deps/whisper-src/ggml"
+				},
+				{
+					"build" : "_deps/whisper-build/ggml/src",
+					"jsonFile" : "directory-_deps.whisper-build.ggml.src-Debug-7609158a84527aa28413.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 2,
+					"source" : "cmake-build-debug/_deps/whisper-src/ggml/src",
+					"targetIndexes" : 
+					[
+						3,
+						4,
+						5
+					]
+				},
+				{
+					"build" : "_deps/whisper-build/src",
+					"jsonFile" : "directory-_deps.whisper-build.src-Debug-1dd7e71728691b32cbce.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "cmake-build-debug/_deps/whisper-src/src",
+					"targetIndexes" : 
+					[
+						6,
+						7,
+						8
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Talos",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				},
+				{
+					"childIndexes" : 
+					[
+						2
+					],
+					"directoryIndexes" : 
+					[
+						1,
+						4
+					],
+					"name" : "whisper.cpp",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						6,
+						7,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3
+					],
+					"name" : "ggml",
+					"parentIndex" : 1,
+					"targetIndexes" : 
+					[
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Talos::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Talos-Debug-b7d6af271de5ab113337.json",
+					"name" : "Talos",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Talos_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Talos_autogen-Debug-07b6bdc8b5282c2716ff.json",
+					"name" : "Talos_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Talos_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Talos_autogen_timestamp_deps-Debug-a8bb99c5b939a4833730.json",
+					"name" : "Talos_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "ggml::@adb943a8c98c89f2306b",
+					"jsonFile" : "target-ggml-Debug-d4ea3ab937f0ac62ddbe.json",
+					"name" : "ggml",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "ggml_autogen::@adb943a8c98c89f2306b",
+					"jsonFile" : "target-ggml_autogen-Debug-778279b863bf661b7d1a.json",
+					"name" : "ggml_autogen",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "ggml_autogen_timestamp_deps::@adb943a8c98c89f2306b",
+					"jsonFile" : "target-ggml_autogen_timestamp_deps-Debug-b2034ea62adc6aa71b71.json",
+					"name" : "ggml_autogen_timestamp_deps",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "whisper::@042bb418fb5bf6c59093",
+					"jsonFile" : "target-whisper-Debug-b722b82733cdee0de087.json",
+					"name" : "whisper",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "whisper_autogen::@042bb418fb5bf6c59093",
+					"jsonFile" : "target-whisper_autogen-Debug-9f3538a4407a5d4c407d.json",
+					"name" : "whisper_autogen",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "whisper_autogen_timestamp_deps::@042bb418fb5bf6c59093",
+					"jsonFile" : "target-whisper_autogen_timestamp_deps-Debug-5063566360620d71312b.json",
+					"name" : "whisper_autogen_timestamp_deps",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/sujan/CLionProjects/Talos/cmake-build-debug",
+		"source" : "/home/sujan/CLionProjects/Talos"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 5
+	}
+}

@@ -2,6 +2,7 @@
 #include "6YEA5652QU/moc_AudioRecorder.cpp"
 #include "6YEA5652QU/moc_CaptureOverlay.cpp"
 #include "6YEA5652QU/moc_ChatWidget.cpp"
+#include "6YEA5652QU/moc_HoleAwareTextLayout.cpp"
 #include "6YEA5652QU/moc_WakeWordDetector.cpp"
 #include "6YEA5652QU/moc_WhisperTranscriber.cpp"
 #include "R665OFAGNM/moc_MainWindow.cpp"
