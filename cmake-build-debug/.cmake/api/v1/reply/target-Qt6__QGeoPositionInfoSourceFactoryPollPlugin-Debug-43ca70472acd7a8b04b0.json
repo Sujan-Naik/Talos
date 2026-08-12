@@ -1,0 +1,200 @@
+{
+	"abstract" : true,
+	"artifacts" : 
+	[
+		{
+			"path" : "/usr/lib/x86_64-linux-gnu/qt6/plugins/position/libqtposition_positionpoll.so"
+		}
+	],
+	"backtrace" : 26,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"include",
+			"__qt_internal_include_plugin_packages",
+			"find_package",
+			"__find_dependency_common",
+			"find_dependency",
+			"_qt_internal_find_qt_dependencies"
+		],
+		"files" : 
+		[
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6Positioning/Qt6QGeoPositionInfoSourceFactoryPollPluginTargets.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6Positioning/Qt6QGeoPositionInfoSourceFactoryPollPluginConfig.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicPluginHelpers.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6Positioning/Qt6PositioningPlugins.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6Positioning/Qt6PositioningConfig.cmake",
+			"/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeFindDependencyMacro.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicDependencyHelpers.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6WebEngineCore/Qt6WebEngineCoreDependencies.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6WebEngineCore/Qt6WebEngineCoreConfig.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6WebEngineWidgets/Qt6WebEngineWidgetsDependencies.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6WebEngineWidgets/Qt6WebEngineWidgetsConfig.cmake",
+			"/usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 12
+			},
+			{
+				"command" : 3,
+				"file" : 12,
+				"line" : 5,
+				"parent" : 0
+			},
+			{
+				"file" : 11,
+				"parent" : 1
+			},
+			{
+				"command" : 3,
+				"file" : 11,
+				"line" : 167,
+				"parent" : 2
+			},
+			{
+				"file" : 10,
+				"parent" : 3
+			},
+			{
+				"command" : 1,
+				"file" : 10,
+				"line" : 50,
+				"parent" : 4
+			},
+			{
+				"file" : 9,
+				"parent" : 5
+			},
+			{
+				"command" : 6,
+				"file" : 9,
+				"line" : 39,
+				"parent" : 6
+			},
+			{
+				"command" : 5,
+				"file" : 6,
+				"line" : 108,
+				"parent" : 7
+			},
+			{
+				"command" : 4,
+				"file" : 5,
+				"line" : 125,
+				"parent" : 8
+			},
+			{
+				"command" : 3,
+				"file" : 5,
+				"line" : 93,
+				"parent" : 9
+			},
+			{
+				"file" : 8,
+				"parent" : 10
+			},
+			{
+				"command" : 1,
+				"file" : 8,
+				"line" : 50,
+				"parent" : 11
+			},
+			{
+				"file" : 7,
+				"parent" : 12
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 39,
+				"parent" : 13
+			},
+			{
+				"command" : 5,
+				"file" : 6,
+				"line" : 108,
+				"parent" : 14
+			},
+			{
+				"command" : 4,
+				"file" : 5,
+				"line" : 125,
+				"parent" : 15
+			},
+			{
+				"command" : 3,
+				"file" : 5,
+				"line" : 93,
+				"parent" : 16
+			},
+			{
+				"file" : 4,
+				"parent" : 17
+			},
+			{
+				"command" : 1,
+				"file" : 4,
+				"line" : 133,
+				"parent" : 18
+			},
+			{
+				"file" : 3,
+				"parent" : 19
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 5,
+				"parent" : 20
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 439,
+				"parent" : 21
+			},
+			{
+				"file" : 1,
+				"parent" : 22
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 61,
+				"parent" : 23
+			},
+			{
+				"file" : 0,
+				"parent" : 24
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 69,
+				"parent" : 25
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 10
+	},
+	"id" : "Qt6::QGeoPositionInfoSourceFactoryPollPlugin::@6890427a1f51a3e7e1df",
+	"imported" : true,
+	"local" : true,
+	"name" : "Qt6::QGeoPositionInfoSourceFactoryPollPlugin",
+	"nameOnDisk" : "libqtposition_positionpoll.so",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sources" : [],
+	"type" : "MODULE_LIBRARY"
+}

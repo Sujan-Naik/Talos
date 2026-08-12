@@ -1,47 +1,59 @@
 Talos_autogen/timestamp: \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCInformation.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCXXInformation.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeFindDependencyMacro.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeGenericSystem.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeInitializeConfigs.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeLanguageInformation.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInformation.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CMakeSystemSpecificInitialize.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCSourceCompiles.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXCompilerFlag.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckCXXSourceCompiles.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckIncludeFile.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/CheckLibraryExists.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/CMakeCommonCompilerMacros.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-C.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU-CXX.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Compiler/GNU.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FeatureSummary.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FetchContent/CMakeLists.cmake.in \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindGit.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindOpenGL.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPackageMessage.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPkgConfig.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindThreads.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindVulkan.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/GNUInstallDirs.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckCompilerFlag.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckFlagCommonConfig.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Internal/CheckSourceCompiles.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/MacroAddFileDependencies.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-C.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU-CXX.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux-GNU.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/Linux.cmake \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-3.26/Modules/Platform/UnixPaths.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeCInformation.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeCXXInformation.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeCommonLanguageInclude.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeFindDependencyMacro.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeGenericSystem.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeInitializeConfigs.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeLanguageInformation.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeSystemSpecificInformation.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CMakeSystemSpecificInitialize.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CheckCSourceCompiles.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CheckCXXCompilerFlag.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CheckCXXSourceCompiles.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CheckIncludeFile.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/CheckLibraryExists.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Compiler/CMakeCommonCompilerMacros.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Compiler/GNU-C.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Compiler/GNU-CXX.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Compiler/GNU.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/ExternalProject/shared_internal_commands.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FeatureSummary.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FetchContent.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FetchContent/CMakeLists.cmake.in \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FindGit.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FindOpenGL.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FindPackageHandleStandardArgs.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FindPackageMessage.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FindPkgConfig.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FindThreads.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/FindVulkan.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/GNUInstallDirs.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Internal/CMakeCLinkerInformation.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Internal/CMakeCXXLinkerInformation.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Internal/CMakeCommonLinkerInformation.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Internal/CheckCompilerFlag.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Internal/CheckFlagCommonConfig.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Internal/CheckSourceCompiles.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Linker/GNU-C.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Linker/GNU-CXX.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Linker/GNU.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/MacroAddFileDependencies.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linker/GNU.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linker/Linux-GNU-C.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linker/Linux-GNU-CXX.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linker/Linux-GNU.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linux-GNU-C.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linux-GNU-CXX.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linux-GNU.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linux-Initialize.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/Linux.cmake \
+	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/share/cmake-4.3/Modules/Platform/UnixPaths.cmake \
 	/home/sujan/CLionProjects/Talos/CMakeLists.txt \
-	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/3.26.4/CMakeCCompiler.cmake \
-	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/3.26.4/CMakeCXXCompiler.cmake \
-	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/3.26.4/CMakeSystem.cmake \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/4.3.1/CMakeCCompiler.cmake \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/4.3.1/CMakeCXXCompiler.cmake \
+	/home/sujan/CLionProjects/Talos/cmake-build-debug/CMakeFiles/4.3.1/CMakeSystem.cmake \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/Talos_autogen/moc_predefs.h \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-src/include/onnxruntime_c_api.h \
 	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-src/include/onnxruntime_cxx_api.h \
@@ -53,11 +65,14 @@ Talos_autogen/timestamp: \
 	/home/sujan/CLionProjects/Talos/include/CaptureOverlay.h \
 	/home/sujan/CLionProjects/Talos/include/ChatWidget.h \
 	/home/sujan/CLionProjects/Talos/include/HoleAwareTextLayout.h \
+	/home/sujan/CLionProjects/Talos/include/OcrService.h \
 	/home/sujan/CLionProjects/Talos/include/WakeWordDetector.h \
 	/home/sujan/CLionProjects/Talos/include/WhisperTranscriber.h \
 	/home/sujan/CLionProjects/Talos/include/window/MainWindow.h \
+	/home/sujan/CLionProjects/Talos/src/CaptureOverlay.cpp \
 	/home/sujan/CLionProjects/Talos/src/ChatWidget.cpp \
 	/home/sujan/CLionProjects/Talos/src/HoleAwareTextLayout.cpp \
+	/home/sujan/CLionProjects/Talos/src/OcrService.cpp \
 	/home/sujan/CLionProjects/Talos/src/main.cpp \
 	/home/sujan/CLionProjects/Talos/src/window/MainWindow.cpp \
 	/usr/include/alloca.h \

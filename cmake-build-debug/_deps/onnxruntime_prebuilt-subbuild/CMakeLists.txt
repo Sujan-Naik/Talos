@@ -1,7 +1,13 @@
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# file LICENSE.rst or https://cmake.org/licensing for details.
 
-cmake_minimum_required(VERSION 3.26.4)
+cmake_minimum_required(VERSION 4.3.1)
+
+# Reject any attempt to use a toolchain file. We must not use one because
+# we could be downloading it here. If the CMAKE_TOOLCHAIN_FILE environment
+# variable is set, the cache variable will have been initialized from it.
+unset(CMAKE_TOOLCHAIN_FILE CACHE)
+unset(ENV{CMAKE_TOOLCHAIN_FILE})
 
 # We name the project and the target for the ExternalProject_Add() call
 # to something that will highlight to the user what we are working on if
@@ -13,7 +19,7 @@ project(onnxruntime_prebuilt-populate NONE)
 
 include(ExternalProject)
 ExternalProject_Add(onnxruntime_prebuilt-populate
-                     "UPDATE_DISCONNECTED" "False" "DOWNLOAD_EXTRACT_TIMESTAMP" "TRUE" "URL" "https://github.com/microsoft/onnxruntime/releases/download/v1.17.1/onnxruntime-linux-x64-1.17.1.tgz"
+                     "UPDATE_DISCONNECTED" "False" "DOWNLOAD_EXTRACT_TIMESTAMP" "TRUE" "EXTERNALPROJECT_INTERNAL_ARGUMENT_SEPARATOR" "URL" "https://github.com/microsoft/onnxruntime/releases/download/v1.17.1/onnxruntime-linux-x64-1.17.1.tgz"
                     SOURCE_DIR          "/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-src"
                     BINARY_DIR          "/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/onnxruntime_prebuilt-build"
                     CONFIGURE_COMMAND   ""

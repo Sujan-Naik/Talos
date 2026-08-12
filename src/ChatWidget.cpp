@@ -1,316 +1,168 @@
-#include "../include/ChatWidget.h"
-#include "../include/window/MainWindow.h"
+#include "ChatWidget.h"
+
+// Required for the working screen capture and OCR logic
+#include <tesseract/baseapi.h>
+#include <leptonica/allheaders.h>
+#include <QScreen>
+#include <QGuiApplication>
+#include <QThread>
+#include <QImage>
+#include <QPixmap>
+
+#include <QFile>
+#include <QFileInfo>
+#include <QDir>
+#include <QCoreApplication>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <QRegion>
+#include <QKeyEvent>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QNetworkRequest>
 #include <QUrl>
-#include <tesseract/baseapi.h>
-#include <leptonica/allheaders.h>
-#include <QString>
-#include <QImage>
-#include <QGuiApplication>
-#include <QScreen>
-#include <QApplication>
-#include <QTimer>
-#include <QThread>
-#include <QDebug>
-#include <cmath>
-#include <QFile>
+#include <QNetworkRequest>
 #include <QWebEnginePage>
-#include <QKeyEvent>
 
-ChatWidget::ChatWidget(QWidget *parent) : QWidget(parent) {
-    setAttribute(Qt::WA_TranslucentBackground, true);
-    loadExternalStyleSheet();
-
+ChatWidget::ChatWidget(QWidget *parent)
+    : QWidget(parent)
+{
     m_webEngineView = new QWebEngineView(this);
-    m_webEngineView->setObjectName("webEngineView");
-    m_webEngineView->page()->setBackgroundColor(Qt::transparent);
+    m_inputBox = new QTextEdit(this);
+    m_captureButton = new QPushButton(this);
+    m_micButton = new QPushButton(this);
+    m_sendButton = new QPushButton(this);
 
-    connect(m_webEngineView, &QWebEngineView::loadFinished, this, [this](bool ok) {
-        m_isPageLoaded = ok;
-        if (ok && m_holeRect.isValid()) {
-            setHoleRect(m_holeRect);
-        }
-    });
-
-    m_webEngineView->setHtml(getInitialHtml());
-
-    m_networkManager = new QNetworkAccessManager(this);
-    m_overlay = new CaptureOverlay();
+    m_inputBox->installEventFilter(this);
 
     m_recorder = new AudioRecorder(this);
-    m_transcriber = new WhisperTranscriber("ggml-tiny.en.bin", this);
-
     m_vadTimer = new QTimer(this);
-    m_vadTimer->setInterval(100);
 
-    connect(m_vadTimer, &QTimer::timeout, this, &ChatWidget::processVadChunk);
+    m_networkManager = new QNetworkAccessManager(this);
 
-    connect(m_transcriber, &WhisperTranscriber::transcriptionFinished, this, [this](const QString &text) {
-        m_micButton->setEnabled(true);
-        m_micButton->setText("🎤");
-        m_micButton->setObjectName("");
-        m_micButton->setStyle(m_micButton->style());
-        if (!text.isEmpty()) {
-            m_inputBox->setPlainText(text);
-            m_inputBox->setFocus();
-        }
-    });
+    m_captureButton->setText("Capture");
+    m_micButton->setText("Mic");
+    m_sendButton->setText("Send");
 
-    m_inputBox = new QTextEdit(this);
-    m_inputBox->setPlaceholderText("Ask AI assistant...");
-    m_inputBox->setLineWrapMode(QTextEdit::WidgetWidth);
-    m_inputBox->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_inputBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    m_captureButton = new QPushButton("Copy Below", this);
-    m_micButton = new QPushButton("🎤", this);
-    m_sendButton = new QPushButton("Send", this);
-    m_sendButton->setObjectName("sendButton");
+    // Initialize the overlay for the visual scanning effect
+    m_overlay = new CaptureOverlay(this);
 
     connect(m_captureButton, &QPushButton::clicked, this, &ChatWidget::captureAndSetText);
     connect(m_micButton, &QPushButton::clicked, this, &ChatWidget::toggleMicrophone);
-
-    auto sendHandler = [this]() {
+    connect(m_sendButton, &QPushButton::clicked, this, [this]() {
         QString text = m_inputBox->toPlainText().trimmed();
         if (!text.isEmpty()) {
-            appendMessage(text, true);
-            emit messageSent(text);
-            sendApiRequest();
+            appendMessageAsUser(text);
             m_inputBox->clear();
+            sendApiRequest();
         }
-    };
+    });
 
-    connect(m_sendButton, &QPushButton::clicked, sendHandler);
+    connect(m_vadTimer, &QTimer::timeout, this, &ChatWidget::processVadChunk);
 
-    m_inputBox->installEventFilter(this);
+    connect(m_webEngineView, &QWebEngineView::loadFinished, this, [this](bool ok) {
+        m_isPageLoaded = ok;
+        if (m_isPageLoaded) {
+            syncHoleToJavaScript();
+        }
+    });
+
+    QString initialHtml = getInitialHtml();
+    QString appDir = QCoreApplication::applicationDirPath();
+    m_webEngineView->setHtml(initialHtml, QUrl::fromLocalFile(appDir + "/"));
+
+    loadExternalStyleSheet();
+    updateSubWidgetLayout();
 }
 
-void ChatWidget::loadExternalStyleSheet() {
-    QFile styleFile(":/style/ChatWidget.css");
-    if (!styleFile.exists()) {
-        styleFile.setFileName("ChatWidget.css");
-    }
-    if (styleFile.open(QFile::ReadOnly | QFile::Text)) {
-        QString styleSheet = QLatin1String(styleFile.readAll());
-        setStyleSheet(styleSheet);
-        styleFile.close();
-    }
-}
-
-QString ChatWidget::getInitialHtml() const {
-    return R"html(
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: transparent !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #F4F4F5;
-            font-size: 14px;
-            padding: 12px;
-            overflow-y: auto;
-            height: 100vh;
-        }
-
-        #obstacle {
-            display: none;
-            float: left;
-            shape-margin: 10px;
-            pointer-events: none;
-        }
-
-        #chat-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-        }
-
-        .message {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 12px;
-            line-height: 1.4;
-            word-break: break-word;
-            white-space: pre-wrap;
-            clear: both;
-        }
-
-        .message.user {
-            background-color: #007AFF;
-            color: #FFFFFF;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-
-        .message.ai {
-            background-color: #323232;
-            color: #F4F4F5;
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-        }
-    </style>
-</head>
-<body>
-    <div id="obstacle"></div>
-    <div id="chat-container"></div>
-
-    <script>
-        window.chatApp = {
-            setObstacle: function(config) {
-                const obs = document.getElementById('obstacle');
-                if (!config.active) {
-                    obs.style.display = 'none';
-                    obs.style.width = '0px';
-                    obs.style.height = '0px';
-                    return;
-                }
-                obs.style.display = 'block';
-                obs.style.width = config.width + 'px';
-                obs.style.height = config.height + 'px';
-                obs.style.shapeOutside = `rect(0px ${config.width}px ${config.height}px 0px)`;
-            },
-
-            addMessage: function(data) {
-                const container = document.getElementById('chat-container');
-                let div = null;
-
-                if (data.isDelta) {
-                    const messages = container.getElementsByClassName('message ai');
-                    if (messages.length > 0) {
-                        div = messages[messages.length - 1];
-                    }
-                }
-
-                if (!div) {
-                    div = document.createElement('div');
-                    div.className = 'message ' + (data.isUser ? 'user' : 'ai');
-                    container.appendChild(div);
-                }
-
-                div.textContent += data.text;
-                window.scrollTo(0, document.body.scrollHeight);
-            },
-
-            clear: function() {
-                document.getElementById('chat-container').innerHTML = '';
-            }
-        };
-    </script>
-</body>
-</html>
-    )html";
-}
-
-void ChatWidget::setHoleRect(const QRect &rect) {
-    if (m_holeRect == rect) return;
+void ChatWidget::setHoleRect(const QRect &hole) {
+    if (m_holeRect == hole) return;
 
     m_previousHoleRect = m_holeRect;
-    m_holeRect = rect;
+    m_holeRect = hole;
 
     updateClippingMask();
 
-    if (m_isPageLoaded) {
-        QJsonObject holeObj;
-        holeObj["active"] = m_holeRect.isValid() && !m_holeRect.isEmpty();
-        holeObj["width"] = m_holeRect.width();
-        holeObj["height"] = m_holeRect.height();
-
-        QString jsonParam = QString::fromUtf8(QJsonDocument(holeObj).toJson(QJsonDocument::Compact));
-        m_webEngineView->page()->runJavaScript(QString("window.chatApp.setObstacle(%1);").arg(jsonParam));
+    QRect regionToUpdate = m_previousHoleRect.united(m_holeRect);
+    if (regionToUpdate.isEmpty()) {
+        update();
+    } else {
+        update(regionToUpdate);
     }
 
-    update();
+    syncHoleToJavaScript();
 }
 
-void ChatWidget::updateClippingMask() {
-    clearMask();
+void ChatWidget::appendMessageAsUser(const QString &text) {
+    appendMessage(text, true);
+    QJsonObject messageObj;
+    messageObj["role"] = "user";
+    messageObj["content"] = text;
+    m_conversationHistory.append(messageObj);
+    emit messageSent(text);
+}
 
-    if (m_holeRect.isValid() && !m_holeRect.isEmpty()) {
-        QRegion fullRegion(rect());
-        QRegion holeRegion(m_holeRect);
-        setMask(fullRegion.subtracted(holeRegion));
+void ChatWidget::appendMessageAsAi(const QString &text) {
+    appendMessage(text, false);
+    QJsonObject messageObj;
+    messageObj["role"] = "assistant";
+    messageObj["content"] = text;
+    m_conversationHistory.append(messageObj);
+}
+
+void ChatWidget::sendApiRequest() {
+    if (m_currentReply) {
+        m_currentReply->abort();
+        m_currentReply->deleteLater();
+        m_currentReply = nullptr;
     }
+
+    QUrl url("http://127.0.0.1:8080/v1/chat/completions");
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject json;
+    json["model"] = "local-model";
+    json["messages"] = m_conversationHistory;
+    json["stream"] = true;
+
+    QJsonDocument doc(json);
+    m_streamBuffer.clear();
+    m_isStreamingAi = false;
+
+    m_currentReply = m_networkManager->post(request, doc.toJson());
+    connect(m_currentReply, &QNetworkReply::readyRead, this, &ChatWidget::handleReadyRead);
+    connect(m_currentReply, &QNetworkReply::finished, this, &ChatWidget::handleReplyFinished);
 }
 
 void ChatWidget::resizeEvent(QResizeEvent *event) {
     QWidget::resizeEvent(event);
     updateSubWidgetLayout();
     updateClippingMask();
+    syncHoleToJavaScript();
 }
 
 void ChatWidget::paintEvent(QPaintEvent *event) {
-    Q_UNUSED(event);
-
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(rect(), Qt::transparent);
-    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-
-    if (m_holeRect.isValid() && !m_holeRect.isEmpty()) {
+    if (!m_holeRect.isEmpty()) {
         painter.setCompositionMode(QPainter::CompositionMode_Clear);
         painter.fillRect(m_holeRect, Qt::transparent);
-        painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     }
-}
 
-void ChatWidget::updateSubWidgetLayout() {
-    int margin = 10;
-    int inputHeight = 40;
-    int btnWidth = 85;
-    int micWidth = 40;
-    int sendWidth = 60;
-    int spacing = 6;
-
-    int w = width();
-    int h = height();
-
-    int inputY = h - inputHeight - margin;
-    int inputX = margin;
-    int totalInputWidth = w - (margin * 2);
-
-    int availableInputBoxWidth = totalInputWidth - (btnWidth + micWidth + sendWidth + (spacing * 3));
-
-    m_inputBox->setGeometry(inputX, inputY, availableInputBoxWidth, inputHeight);
-    m_captureButton->setGeometry(inputX + availableInputBoxWidth + spacing, inputY, btnWidth, inputHeight);
-    m_micButton->setGeometry(inputX + availableInputBoxWidth + btnWidth + (spacing * 2), inputY, micWidth, inputHeight);
-    m_sendButton->setGeometry(inputX + availableInputBoxWidth + btnWidth + micWidth + (spacing * 3), inputY, sendWidth, inputHeight);
-
-    int chatY = margin;
-    int chatHeight = inputY - (margin * 2);
-
-    m_webEngineView->setGeometry(margin, chatY, w - (margin * 2), chatHeight);
+    QWidget::paintEvent(event);
 }
 
 bool ChatWidget::eventFilter(QObject *watched, QEvent *event) {
     if (watched == m_inputBox && event->type() == QEvent::KeyPress) {
-        auto *keyEvent = dynamic_cast<QKeyEvent*>(event);
-        if (keyEvent && (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) &&
-            !(keyEvent->modifiers() & Qt::ShiftModifier)) {
-            QString text = m_inputBox->toPlainText().trimmed();
-            if (!text.isEmpty()) {
-                appendMessage(text, true);
-                emit messageSent(text);
-                sendApiRequest();
-                m_inputBox->clear();
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+            if (!(keyEvent->modifiers() & Qt::ShiftModifier)) {
+                m_sendButton->click();
+                return true;
             }
-            return true;
         }
     }
     return QWidget::eventFilter(watched, event);
@@ -321,13 +173,9 @@ void ChatWidget::toggleMicrophone() {
         m_isRecording = true;
         m_hasSpeechStarted = false;
         m_silenceMs = 0;
-
+        m_micButton->setText("Stop");
         m_recorder->startRecording();
-        m_vadTimer->start();
-
-        m_micButton->setText("⏹ Listening...");
-        m_micButton->setObjectName("micButtonListening");
-        m_micButton->setStyle(m_micButton->style());
+        m_vadTimer->start(100);
     } else {
         stopMicrophoneAndTranscribe();
     }
@@ -339,160 +187,42 @@ void ChatWidget::processVadChunk() {
     std::vector<float> recentSamples = m_recorder->getRecentSamples(1600);
     if (recentSamples.empty()) return;
 
-    float sumSquares = 0.0f;
+    float energy = 0.0f;
     for (float sample : recentSamples) {
-        sumSquares += sample * sample;
+        energy += sample * sample;
     }
-    float rms = std::sqrt(sumSquares / static_cast<float>(recentSamples.size()));
+    energy /= static_cast<float>(recentSamples.size());
 
-    const float speechThreshold = 0.015f;
-    const int silenceTimeoutMs = 1200;
+    bool isSpeech = (energy > 0.001f);
 
-    if (rms > speechThreshold) {
+    if (isSpeech) {
         m_hasSpeechStarted = true;
         m_silenceMs = 0;
     } else if (m_hasSpeechStarted) {
-        m_silenceMs += m_vadTimer->interval();
-        if (m_silenceMs >= silenceTimeoutMs) {
+        m_silenceMs += 100;
+        if (m_silenceMs >= 1500) {
             stopMicrophoneAndTranscribe();
         }
     }
 }
 
 void ChatWidget::stopMicrophoneAndTranscribe() {
-    if (!m_isRecording) return;
-
-    m_isRecording = false;
     m_vadTimer->stop();
-
-    m_micButton->setEnabled(false);
-    m_micButton->setText("Transcribing...");
-    m_micButton->setObjectName("");
-    m_micButton->setStyle(m_micButton->style());
+    m_isRecording = false;
+    m_micButton->setText("Mic");
 
     std::vector<float> pcmData = m_recorder->stopRecording();
-    m_transcriber->transcribeAsync(pcmData);
-}
-
-void ChatWidget::appendMessageAsUser(const QString &text) {
-    appendMessage(text, true);
-}
-
-void ChatWidget::appendMessageAsAi(const QString &text) {
-    appendMessage(text, false);
-}
-
-void ChatWidget::appendMessage(const QString &text, bool isUser) {
-    if (m_isPageLoaded) {
-        QJsonObject msgObj;
-        msgObj["text"] = text;
-        msgObj["isUser"] = isUser;
-        msgObj["isDelta"] = false;
-
-        QString jsonParam = QString::fromUtf8(QJsonDocument(msgObj).toJson(QJsonDocument::Compact));
-        m_webEngineView->page()->runJavaScript(QString("window.chatApp.addMessage(%1);").arg(jsonParam));
-    }
-
-    QJsonObject historyObj;
-    historyObj["role"] = isUser ? "user" : "assistant";
-    historyObj["content"] = text;
-    m_conversationHistory.append(historyObj);
-    m_isStreamingAi = !isUser;
-}
-
-void ChatWidget::sendApiRequest() {
-    m_inputBox->setEnabled(false);
-    m_sendButton->setEnabled(false);
-    if (m_captureButton) m_captureButton->setEnabled(false);
-    if (m_micButton) m_micButton->setEnabled(false);
-
-    m_streamBuffer.clear();
-
-    QNetworkRequest request(QUrl("http://127.0.0.1:8080/v1/chat/completions"));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-
-    QJsonObject payload;
-    payload["messages"] = m_conversationHistory;
-    payload["temperature"] = 0.7;
-    payload["stream"] = true;
-
-    QJsonDocument doc(payload);
-    m_currentReply = m_networkManager->post(request, doc.toJson());
-
-    connect(m_currentReply, &QNetworkReply::readyRead, this, &ChatWidget::handleReadyRead);
-    connect(m_currentReply, &QNetworkReply::finished, this, &ChatWidget::handleReplyFinished);
-}
-
-void ChatWidget::handleReadyRead() {
-    if (!m_currentReply) return;
-
-    m_streamBuffer.append(m_currentReply->readAll());
-
-    while (m_streamBuffer.contains('\n')) {
-        int lineEndIndex = m_streamBuffer.indexOf('\n');
-        QByteArray line = m_streamBuffer.left(lineEndIndex).trimmed();
-        m_streamBuffer.remove(0, lineEndIndex + 1);
-
-        if (line.startsWith("data: ")) {
-            QByteArray jsonData = line.mid(6).trimmed();
-            if (jsonData == "[DONE]") continue;
-
-            QJsonDocument doc = QJsonDocument::fromJson(jsonData);
-            if (!doc.isNull() && doc.isObject()) {
-                QJsonObject rootObj = doc.object();
-                QJsonArray choices = rootObj["choices"].toArray();
-                if (!choices.isEmpty()) {
-                    QJsonObject delta = choices[0].toObject()["delta"].toObject();
-                    if (delta.contains("content")) {
-                        QString token = delta["content"].toString();
-                        appendToCurrentAiMessage(token);
-                    }
-                }
-            }
+    if (!pcmData.empty()) {
+        QString transcribedText = m_transcriber->transcribe(pcmData);
+        if (!transcribedText.isEmpty()) {
+            m_inputBox->setText(transcribedText);
         }
     }
 }
 
-void ChatWidget::appendToCurrentAiMessage(const QString &deltaText) {
-    if (!m_isStreamingAi) {
-        appendMessage(deltaText, false);
-    } else {
-        if (m_isPageLoaded) {
-            QJsonObject msgObj;
-            msgObj["text"] = deltaText;
-            msgObj["isUser"] = false;
-            msgObj["isDelta"] = true;
-
-            QString jsonParam = QString::fromUtf8(QJsonDocument(msgObj).toJson(QJsonDocument::Compact));
-            m_webEngineView->page()->runJavaScript(QString("window.chatApp.addMessage(%1);").arg(jsonParam));
-        }
-
-        if (!m_conversationHistory.isEmpty()) {
-            QJsonObject lastObj = m_conversationHistory.last().toObject();
-            if (lastObj["role"].toString() == "assistant") {
-                lastObj["content"] = lastObj["content"].toString() + deltaText;
-                m_conversationHistory.last() = lastObj;
-            }
-        }
-    }
-}
-
-void ChatWidget::handleReplyFinished() {
-    m_inputBox->setEnabled(true);
-    m_sendButton->setEnabled(true);
-    if (m_captureButton) m_captureButton->setEnabled(true);
-    if (m_micButton) m_micButton->setEnabled(true);
-    m_isStreamingAi = false;
-
-    if (m_currentReply && m_currentReply->error() != QNetworkReply::NoError) {
-        appendMessage(QString("[Error: %1]").arg(m_currentReply->errorString()), false);
-    }
-
-    if (m_currentReply) {
-        m_currentReply->deleteLater();
-        m_currentReply = nullptr;
-    }
-}
+// -------------------------------------------------------------------------
+// Working Capture & OCR Logic Restored
+// -------------------------------------------------------------------------
 
 QString performScreenOCR(const QImage &srcImage) {
     if (srcImage.isNull()) return QString();
@@ -525,14 +255,16 @@ void ChatWidget::captureAndSetText() {
 
     QWidget *topWindow = this->window();
 
-    auto *mainWindow = qobject_cast<MainWindow*>(topWindow);
-    QRect holeRect = mainWindow ? mainWindow->holeRect() : QRect(200, 150, 400, 300);
-
-    QPoint globalTopLeft = topWindow->mapToGlobal(holeRect.topLeft());
+    // Map the hole rectangle to global screen coordinates
+    QRect holeRect = m_holeRect.isValid() && !m_holeRect.isEmpty() ? m_holeRect : QRect(200, 150, 400, 300);
+    QPoint globalTopLeft = this->mapToGlobal(holeRect.topLeft());
     QRect globalCaptureRect(globalTopLeft.x(), globalTopLeft.y(), holeRect.width(), holeRect.height());
 
+    // 1. Hide the window so it's not in the screenshot
     topWindow->hide();
     qApp->processEvents();
+
+    // Wait slightly to give the OS compositor time to remove the window
     QThread::msleep(250);
 
     QScreen *targetScreen = QGuiApplication::screenAt(globalCaptureRect.center());
@@ -541,12 +273,13 @@ void ChatWidget::captureAndSetText() {
     }
 
     qreal dpr = targetScreen->devicePixelRatio();
-
     QRect screenGeo = targetScreen->geometry();
-    int cropX = qRound((globalCaptureRect.x() - screenGeo.x()) * dpr);
-    int cropY = qRound((globalCaptureRect.y() - screenGeo.y()) * dpr);
-    int cropW = qRound(globalCaptureRect.width() * dpr);
-    int cropH = qRound(globalCaptureRect.height() * dpr);
+
+    // Use exact floating-point calculations before rounding to avoid vertical drift
+    int cropX = std::round((globalCaptureRect.x() - screenGeo.x()) * dpr);
+    int cropY = std::round((globalCaptureRect.y() - screenGeo.y()) * dpr);
+    int cropW = std::round(globalCaptureRect.width() * dpr);
+    int cropH = std::round(globalCaptureRect.height() * dpr);
 
     QPixmap fullScreen = targetScreen->grabWindow(0);
     QPixmap screenshot;
@@ -556,24 +289,30 @@ void ChatWidget::captureAndSetText() {
         screenshot = fullScreen.copy(nativeCropRect.intersected(fullScreen.rect()));
     }
 
+    // 3. Restore the window
     topWindow->show();
     topWindow->raise();
     topWindow->activateWindow();
     qApp->processEvents();
 
-    m_overlay->startScan(globalCaptureRect);
-    qApp->processEvents();
+    if (m_overlay) {
+        m_overlay->startScan(globalCaptureRect);
+        qApp->processEvents();
+    }
 
+    // 4. Perform direct inline OCR using your working logic
     QString extractedText;
     if (!screenshot.isNull()) {
         extractedText = performScreenOCR(screenshot.toImage());
     }
 
-    m_overlay->stopScan();
+    if (m_overlay) {
+        m_overlay->stopScan();
+    }
 
     if (!extractedText.isEmpty()) {
         QString currentText = m_inputBox->toPlainText();
-        m_inputBox->setPlainText(currentText + extractedText);
+        m_inputBox->setPlainText(currentText + (currentText.isEmpty() ? "" : "\n") + extractedText);
         m_inputBox->setFocus();
 
         m_captureButton->setText("Copied!");
@@ -587,8 +326,193 @@ void ChatWidget::captureAndSetText() {
 
     QTimer::singleShot(1500, this, [this]() {
         m_captureButton->setEnabled(true);
-        m_captureButton->setText("Copy Below");
+        m_captureButton->setText("Capture");
         m_captureButton->setObjectName("");
         m_captureButton->setStyle(m_captureButton->style());
     });
+}
+
+// -------------------------------------------------------------------------
+
+void ChatWidget::handleReadyRead() {
+    if (!m_currentReply) return;
+
+    m_streamBuffer.append(m_currentReply->readAll());
+
+    while (m_streamBuffer.contains('\n')) {
+        int newlineIdx = m_streamBuffer.indexOf('\n');
+        QByteArray line = m_streamBuffer.left(newlineIdx).trimmed();
+        m_streamBuffer.remove(0, newlineIdx + 1);
+
+        if (line.isEmpty()) continue;
+
+        if (line.startsWith("data: ")) {
+            line = line.mid(6).trimmed();
+        }
+
+        if (line == "[DONE]") {
+            break;
+        }
+
+        QJsonDocument doc = QJsonDocument::fromJson(line);
+        if (!doc.isNull() && doc.isObject()) {
+            QJsonObject root = doc.object();
+            QString deltaText;
+
+            if (root.contains("choices")) {
+                QJsonArray choices = root["choices"].toArray();
+                if (!choices.isEmpty()) {
+                    QJsonObject choice = choices[0].toObject();
+                    if (choice.contains("delta")) {
+                        QJsonObject delta = choice["delta"].toObject();
+                        if (delta.contains("content")) {
+                            deltaText = delta["content"].toString();
+                        }
+                    } else if (choice.contains("text")) {
+                        deltaText = choice["text"].toString();
+                    }
+                }
+            }
+            else if (root.contains("response")) {
+                deltaText = root["response"].toString();
+            } else if (root.contains("message")) {
+                QJsonObject msg = root["message"].toObject();
+                if (msg.contains("content")) {
+                    deltaText = msg["content"].toString();
+                }
+            }
+
+            if (!deltaText.isEmpty()) {
+                if (!m_isStreamingAi) {
+                    m_isStreamingAi = true;
+                    appendMessageAsAi(deltaText);
+                } else {
+                    appendToCurrentAiMessage(deltaText);
+                    if (!m_conversationHistory.isEmpty()) {
+                        QJsonObject lastMsg = m_conversationHistory.last().toObject();
+                        if (lastMsg["role"] == "assistant") {
+                            lastMsg["content"] = lastMsg["content"].toString() + deltaText;
+                            m_conversationHistory[m_conversationHistory.size() - 1] = lastMsg;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void ChatWidget::handleReplyFinished() {
+    if (m_currentReply) {
+        m_currentReply->deleteLater();
+        m_currentReply = nullptr;
+    }
+    m_isStreamingAi = false;
+}
+
+void ChatWidget::loadExternalStyleSheet() {
+    QString appDir = QCoreApplication::applicationDirPath();
+    QFile cssFile(appDir + "/style.css");
+    if (cssFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QString style = QString::fromUtf8(cssFile.readAll());
+        this->setStyleSheet(style);
+        cssFile.close();
+    }
+}
+
+QString ChatWidget::getInitialHtml() const {
+    QString appDir = QCoreApplication::applicationDirPath();
+    QFile htmlFile(appDir + "/chat.html");
+    if (htmlFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QString content = QString::fromUtf8(htmlFile.readAll());
+        htmlFile.close();
+        return content;
+    }
+    return QString();
+}
+
+void ChatWidget::updateSubWidgetLayout() {
+    int w = width();
+    int h = height();
+    int controlsHeight = 100;
+    int buttonWidth = 75;
+    int buttonHeight = 32;
+    int spacing = 8;
+    int margin = 10;
+
+    m_webEngineView->setGeometry(0, 0, w, h - controlsHeight);
+
+    int inputY = h - controlsHeight + margin;
+    int inputWidth = w - (buttonWidth + margin * 3);
+    int inputHeight = controlsHeight - (margin * 2);
+
+    m_inputBox->setGeometry(margin, inputY, inputWidth, inputHeight);
+
+    int btnX = margin + inputWidth + margin;
+    m_captureButton->setGeometry(btnX, inputY, buttonWidth, buttonHeight);
+    m_micButton->setGeometry(btnX, inputY + buttonHeight + spacing / 2, buttonWidth, buttonHeight);
+    m_sendButton->setGeometry(btnX, inputY + (buttonHeight + spacing / 2) * 2, buttonWidth, buttonHeight);
+}
+
+void ChatWidget::appendMessage(const QString &text, bool isUser) {
+    if (!m_isPageLoaded) {
+        qWarning() << "[ChatWidget] Page not loaded yet! Delaying message.";
+        return;
+    }
+
+    QString escapedText = text;
+    escapedText.replace("\\", "\\\\");
+    escapedText.replace("\"", "\\\"");
+    escapedText.replace("\n", "\\n");
+    escapedText.replace("\r", "");
+
+    QString js = QString("if (typeof window.appendMessage === 'function') window.appendMessage(\"%1\", %2);")
+                     .arg(escapedText)
+                     .arg(isUser ? "true" : "false");
+
+    m_webEngineView->page()->runJavaScript(js);
+}
+
+void ChatWidget::appendToCurrentAiMessage(const QString &deltaText) {
+    if (!m_isPageLoaded) return;
+
+    QString escapedText = deltaText;
+    escapedText.replace("\\", "\\\\");
+    escapedText.replace("\"", "\\\"");
+    escapedText.replace("\n", "\\n");
+    escapedText.replace("\r", "");
+
+    QString js = QString("if (typeof window.appendToLastAiMessage === 'function') window.appendToLastAiMessage(\"%1\");")
+                     .arg(escapedText);
+
+    m_webEngineView->page()->runJavaScript(js);
+}
+
+void ChatWidget::syncHoleToJavaScript() {
+    if (!m_isPageLoaded || !m_webEngineView) return;
+
+    QRect localHole = m_holeRect.intersected(m_webEngineView->geometry());
+    QPoint relativePos = m_webEngineView->mapFromParent(localHole.topLeft());
+
+    int x = relativePos.x();
+    int y = relativePos.y();
+    int w = localHole.width();
+    int h = localHole.height();
+    int viewW = m_webEngineView->width();
+
+    QString js = QString("if (typeof window.updateHoleRect === 'function') window.updateHoleRect(%1, %2, %3, %4, %5);")
+                     .arg(x)
+                     .arg(y)
+                     .arg(w)
+                     .arg(h)
+                     .arg(viewW);
+
+    m_webEngineView->page()->runJavaScript(js);
+}
+
+void ChatWidget::updateClippingMask() {
+    QRegion maskRegion(rect());
+    if (!m_holeRect.isEmpty()) {
+        maskRegion = maskRegion.subtracted(QRegion(m_holeRect));
+    }
+    setMask(maskRegion);
 }

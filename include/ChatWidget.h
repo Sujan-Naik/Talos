@@ -48,6 +48,7 @@ private:
     void updateSubWidgetLayout();
     void appendMessage(const QString &text, bool isUser);
     void appendToCurrentAiMessage(const QString &deltaText);
+    void syncHoleToJavaScript();
 
     QWebEngineView *m_webEngineView = nullptr;
     QTextEdit *m_inputBox = nullptr;

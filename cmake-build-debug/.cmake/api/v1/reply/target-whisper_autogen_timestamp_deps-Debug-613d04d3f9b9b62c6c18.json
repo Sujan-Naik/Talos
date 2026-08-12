@@ -1,0 +1,54 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"cmake-build-debug/_deps/whisper-src/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 10
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "ggml::@adb943a8c98c89f2306b"
+		}
+	],
+	"id" : "whisper_autogen_timestamp_deps::@042bb418fb5bf6c59093",
+	"isGeneratorProvided" : true,
+	"name" : "whisper_autogen_timestamp_deps",
+	"orderDependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "Qt6::moc::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "Qt6::uic::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "ggml::@adb943a8c98c89f2306b"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "_deps/whisper-build/src",
+		"source" : "cmake-build-debug/_deps/whisper-src/src"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

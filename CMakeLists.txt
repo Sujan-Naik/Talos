@@ -60,6 +60,7 @@ else()
 endif()
 
 add_library(ONNXRuntime::ONNXRuntime UNKNOWN IMPORTED)
+
 set_target_properties(ONNXRuntime::ONNXRuntime PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${ONNXRUNTIME_INCLUDE_DIR}"
         IMPORTED_LOCATION "${ONNXRUNTIME_LIBRARY}"
@@ -110,6 +111,10 @@ if(PkgConfig_FOUND)
     pkg_check_modules(LEPTONICA lept)
 endif()
 
+
+
+
+
 # -----------------------------------------------------------------------------
 # 5. Executable Target & Libraries
 # -----------------------------------------------------------------------------
@@ -120,11 +125,15 @@ add_executable(Talos
         include/ChatWidget.h
         src/ChatWidget.cpp
         include/CaptureOverlay.h
+        src/CaptureOverlay.cpp
         include/AudioRecorder.h
         include/WhisperTranscriber.h
         include/WakeWordDetector.h
         include/HoleAwareTextLayout.h
         src/HoleAwareTextLayout.cpp
+        src/OcrService.cpp
+        include/OcrService.h
+        src/OcrService.cpp
 )
 
 target_include_directories(Talos PRIVATE
@@ -132,6 +141,7 @@ target_include_directories(Talos PRIVATE
         ${LEPTONICA_INCLUDE_DIRS}
         ${whisper_SOURCE_DIR}
         ${ONNXRUNTIME_INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(Talos PRIVATE
@@ -146,4 +156,14 @@ target_link_libraries(Talos PRIVATE
         ONNXRuntime::ONNXRuntime
         ${TESSERACT_LIBRARIES}
         ${LEPTONICA_LIBRARIES}
+)
+
+add_custom_command(
+        TARGET Talos POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/chat.html"
+        "$<TARGET_FILE_DIR:Talos>/chat.html"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/style.css"
+        "$<TARGET_FILE_DIR:Talos>/style.css"
 )
