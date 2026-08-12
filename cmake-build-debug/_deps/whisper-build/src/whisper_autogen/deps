@@ -1,5 +1,0 @@
-whisper_autogen/timestamp: \
-	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/include/whisper.h \
-	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/CMakeLists.txt \
-	/home/sujan/CLionProjects/Talos/cmake-build-debug/_deps/whisper-src/src/whisper.cpp \
-	/home/sujan/.local/share/JetBrains/Toolbox/apps/clion/bin/cmake/linux/x64/bin/cmake

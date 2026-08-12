@@ -1,6 +1,6 @@
 #include "ChatWidget.h"
+#include "ChatBackend.h"
 
-// Required for the working screen capture and OCR logic
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
 #include <QScreen>
@@ -24,6 +24,16 @@
 #include <QUrl>
 #include <QNetworkRequest>
 #include <QWebEnginePage>
+#include <QWebChannel>
+#include <QDebug>
+#include <QPushButton>
+#include <QWebEngineView>
+#include <QTextEdit>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+
+#include "AudioRecorder.h"
+#include "CaptureOverlay.h"
 
 ChatWidget::ChatWidget(QWidget *parent)
     : QWidget(parent)
@@ -40,20 +50,33 @@ ChatWidget::ChatWidget(QWidget *parent)
     m_vadTimer = new QTimer(this);
 
     m_networkManager = new QNetworkAccessManager(this);
+    m_backend = new ChatBackend(this);
 
     m_captureButton->setText("Capture");
     m_micButton->setText("Mic");
     m_sendButton->setText("Send");
 
-    // Initialize the overlay for the visual scanning effect
     m_overlay = new CaptureOverlay(this);
+
+    auto *channel = new QWebChannel(m_webEngineView->page());
+    channel->registerObject(QStringLiteral("backend"), m_backend);
+    m_webEngineView->page()->setWebChannel(channel);
+
+    connect(m_backend, &ChatBackend::messageReceived, this, [this](const QString &text) {
+        if (!text.isEmpty()) {
+            appendMessageAsUser(text);
+            sendApiRequest();
+        }
+    });
+
+    connect(m_backend, &ChatBackend::captureRequested, this, &ChatWidget::captureAndSetText);
+    connect(m_backend, &ChatBackend::micToggleRequested, this, &ChatWidget::toggleMicrophone);
 
     connect(m_captureButton, &QPushButton::clicked, this, &ChatWidget::captureAndSetText);
     connect(m_micButton, &QPushButton::clicked, this, &ChatWidget::toggleMicrophone);
     connect(m_sendButton, &QPushButton::clicked, this, [this]() {
         QString text = m_inputBox->toPlainText().trimmed();
         if (!text.isEmpty()) {
-            appendMessageAsUser(text);
             m_inputBox->clear();
             sendApiRequest();
         }
@@ -63,17 +86,19 @@ ChatWidget::ChatWidget(QWidget *parent)
 
     connect(m_webEngineView, &QWebEngineView::loadFinished, this, [this](bool ok) {
         m_isPageLoaded = ok;
+        qDebug() << "[ChatWidget] Web page load status:" << ok;
         if (m_isPageLoaded) {
             syncHoleToJavaScript();
         }
     });
 
-    QString initialHtml = getInitialHtml();
-    QString appDir = QCoreApplication::applicationDirPath();
-    m_webEngineView->setHtml(initialHtml, QUrl::fromLocalFile(appDir + "/"));
-
-    loadExternalStyleSheet();
+    m_webEngineView->load(QUrl("qrc:///chat.html"));
     updateSubWidgetLayout();
+}
+
+void ChatWidget::setHoleRect(const QRect &hole, bool enabled) {
+    Q_UNUSED(enabled);
+    setHoleRect(hole);
 }
 
 void ChatWidget::setHoleRect(const QRect &hole) {
@@ -176,6 +201,9 @@ void ChatWidget::toggleMicrophone() {
         m_micButton->setText("Stop");
         m_recorder->startRecording();
         m_vadTimer->start(100);
+        if (m_isPageLoaded) {
+            m_webEngineView->page()->runJavaScript("if(typeof window.setMicState==='function') window.setMicState('Stop');");
+        }
     } else {
         stopMicrophoneAndTranscribe();
     }
@@ -210,21 +238,25 @@ void ChatWidget::stopMicrophoneAndTranscribe() {
     m_vadTimer->stop();
     m_isRecording = false;
     m_micButton->setText("Mic");
+    if (m_isPageLoaded) {
+        m_webEngineView->page()->runJavaScript("if(typeof window.setMicState==='function') window.setMicState('Mic');");
+    }
 
     std::vector<float> pcmData = m_recorder->stopRecording();
     if (!pcmData.empty()) {
         QString transcribedText = m_transcriber->transcribe(pcmData);
         if (!transcribedText.isEmpty()) {
             m_inputBox->setText(transcribedText);
+            if (m_isPageLoaded) {
+                QString escaped = transcribedText;
+                escaped.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
+                m_webEngineView->page()->runJavaScript(QString("if(typeof window.setInputValue==='function') window.setInputValue(\"%1\");").arg(escaped));
+            }
         }
     }
 }
 
-// -------------------------------------------------------------------------
-// Working Capture & OCR Logic Restored
-// -------------------------------------------------------------------------
-
-QString performScreenOCR(const QImage &srcImage) {
+static QString performScreenOCR(const QImage &srcImage) {
     if (srcImage.isNull()) return QString();
 
     QImage processedImage = srcImage.scaled(srcImage.width() * 2, srcImage.height() * 2,
@@ -248,23 +280,31 @@ QString performScreenOCR(const QImage &srcImage) {
     return result;
 }
 
+void ChatWidget::setHoleEnabled(bool enabled) {
+    m_holeEnabled = enabled;
+    syncHoleToJavaScript();
+    updateClippingMask();
+    update();
+}
+
+
 void ChatWidget::captureAndSetText() {
     m_captureButton->setEnabled(false);
     m_captureButton->setText("Reading...");
+    if (m_isPageLoaded) {
+        m_webEngineView->page()->runJavaScript("if(typeof window.setCaptureState==='function') window.setCaptureState('Reading...', false, '');");
+    }
     qApp->processEvents();
 
     QWidget *topWindow = this->window();
 
-    // Map the hole rectangle to global screen coordinates
     QRect holeRect = m_holeRect.isValid() && !m_holeRect.isEmpty() ? m_holeRect : QRect(200, 150, 400, 300);
-    QPoint globalTopLeft = this->mapToGlobal(holeRect.topLeft());
+    QPoint globalTopLeft = topWindow->mapToGlobal(holeRect.topLeft());
     QRect globalCaptureRect(globalTopLeft.x(), globalTopLeft.y(), holeRect.width(), holeRect.height());
 
-    // 1. Hide the window so it's not in the screenshot
     topWindow->hide();
     qApp->processEvents();
 
-    // Wait slightly to give the OS compositor time to remove the window
     QThread::msleep(250);
 
     QScreen *targetScreen = QGuiApplication::screenAt(globalCaptureRect.center());
@@ -275,7 +315,6 @@ void ChatWidget::captureAndSetText() {
     qreal dpr = targetScreen->devicePixelRatio();
     QRect screenGeo = targetScreen->geometry();
 
-    // Use exact floating-point calculations before rounding to avoid vertical drift
     int cropX = std::round((globalCaptureRect.x() - screenGeo.x()) * dpr);
     int cropY = std::round((globalCaptureRect.y() - screenGeo.y()) * dpr);
     int cropW = std::round(globalCaptureRect.width() * dpr);
@@ -289,7 +328,6 @@ void ChatWidget::captureAndSetText() {
         screenshot = fullScreen.copy(nativeCropRect.intersected(fullScreen.rect()));
     }
 
-    // 3. Restore the window
     topWindow->show();
     topWindow->raise();
     topWindow->activateWindow();
@@ -300,7 +338,6 @@ void ChatWidget::captureAndSetText() {
         qApp->processEvents();
     }
 
-    // 4. Perform direct inline OCR using your working logic
     QString extractedText;
     if (!screenshot.isNull()) {
         extractedText = performScreenOCR(screenshot.toImage());
@@ -312,16 +349,27 @@ void ChatWidget::captureAndSetText() {
 
     if (!extractedText.isEmpty()) {
         QString currentText = m_inputBox->toPlainText();
-        m_inputBox->setPlainText(currentText + (currentText.isEmpty() ? "" : "\n") + extractedText);
-        m_inputBox->setFocus();
+        QString finalText = currentText + (currentText.isEmpty() ? "" : "\n") + extractedText;
+        m_inputBox->setPlainText(finalText);
+
+        appendMessageAsUser(finalText);
+        m_inputBox->clear();
+        sendApiRequest();
 
         m_captureButton->setText("Copied!");
         m_captureButton->setObjectName("captureButtonSuccess");
         m_captureButton->setStyle(m_captureButton->style());
+        if (m_isPageLoaded) {
+            finalText.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
+            m_webEngineView->page()->runJavaScript(QString("if(typeof window.setCaptureState==='function') window.setCaptureState('Copied!', true, 'success'); if(typeof window.setInputValue==='function') window.setInputValue(\"\");").arg(finalText));
+        }
     } else {
         m_captureButton->setText("No Text Found");
         m_captureButton->setObjectName("captureButtonError");
         m_captureButton->setStyle(m_captureButton->style());
+        if (m_isPageLoaded) {
+            m_webEngineView->page()->runJavaScript("if(typeof window.setCaptureState==='function') window.setCaptureState('No Text Found', true, 'error');");
+        }
     }
 
     QTimer::singleShot(1500, this, [this]() {
@@ -329,10 +377,11 @@ void ChatWidget::captureAndSetText() {
         m_captureButton->setText("Capture");
         m_captureButton->setObjectName("");
         m_captureButton->setStyle(m_captureButton->style());
+        if (m_isPageLoaded) {
+            m_webEngineView->page()->runJavaScript("if(typeof window.setCaptureState==='function') window.setCaptureState('Capture', true, '');");
+        }
     });
 }
-
-// -------------------------------------------------------------------------
 
 void ChatWidget::handleReadyRead() {
     if (!m_currentReply) return;
@@ -409,48 +458,15 @@ void ChatWidget::handleReplyFinished() {
     m_isStreamingAi = false;
 }
 
-void ChatWidget::loadExternalStyleSheet() {
-    QString appDir = QCoreApplication::applicationDirPath();
-    QFile cssFile(appDir + "/style.css");
-    if (cssFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QString style = QString::fromUtf8(cssFile.readAll());
-        this->setStyleSheet(style);
-        cssFile.close();
-    }
-}
-
-QString ChatWidget::getInitialHtml() const {
-    QString appDir = QCoreApplication::applicationDirPath();
-    QFile htmlFile(appDir + "/chat.html");
-    if (htmlFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QString content = QString::fromUtf8(htmlFile.readAll());
-        htmlFile.close();
-        return content;
-    }
-    return QString();
-}
-
 void ChatWidget::updateSubWidgetLayout() {
     int w = width();
     int h = height();
-    int controlsHeight = 100;
-    int buttonWidth = 75;
-    int buttonHeight = 32;
-    int spacing = 8;
-    int margin = 10;
 
-    m_webEngineView->setGeometry(0, 0, w, h - controlsHeight);
-
-    int inputY = h - controlsHeight + margin;
-    int inputWidth = w - (buttonWidth + margin * 3);
-    int inputHeight = controlsHeight - (margin * 2);
-
-    m_inputBox->setGeometry(margin, inputY, inputWidth, inputHeight);
-
-    int btnX = margin + inputWidth + margin;
-    m_captureButton->setGeometry(btnX, inputY, buttonWidth, buttonHeight);
-    m_micButton->setGeometry(btnX, inputY + buttonHeight + spacing / 2, buttonWidth, buttonHeight);
-    m_sendButton->setGeometry(btnX, inputY + (buttonHeight + spacing / 2) * 2, buttonWidth, buttonHeight);
+    m_webEngineView->setGeometry(0, 0, w, h);
+    m_inputBox->setGeometry(0, 0, 0, 0);
+    m_captureButton->setGeometry(0, 0, 0, 0);
+    m_micButton->setGeometry(0, 0, 0, 0);
+    m_sendButton->setGeometry(0, 0, 0, 0);
 }
 
 void ChatWidget::appendMessage(const QString &text, bool isUser) {
@@ -490,7 +506,16 @@ void ChatWidget::appendToCurrentAiMessage(const QString &deltaText) {
 void ChatWidget::syncHoleToJavaScript() {
     if (!m_isPageLoaded || !m_webEngineView) return;
 
-    QRect localHole = m_holeRect.intersected(m_webEngineView->geometry());
+    // If hole is disabled, hide the border
+    if (!m_holeEnabled) {
+        m_webEngineView->page()->runJavaScript("if (typeof window.updateHoleRect === 'function') window.updateHoleRect(0, 0, 0, 0, 0);");
+        return;
+    }
+
+    int titleBarHeight = 35;
+    QRect adjustedHole = m_holeRect.adjusted(0, -titleBarHeight, 0, -titleBarHeight);
+
+    QRect localHole = adjustedHole.intersected(m_webEngineView->geometry());
     QPoint relativePos = m_webEngineView->mapFromParent(localHole.topLeft());
 
     int x = relativePos.x();

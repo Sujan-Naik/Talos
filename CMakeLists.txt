@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(Talos)
 
 # Setup standard Qt target settings
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Multimedia WebEngineWidgets WebEngineCore )
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Multimedia WebEngineWidgets WebEngineCore WebChannel)
 qt_standard_project_setup()
 
 # -----------------------------------------------------------------------------
@@ -53,6 +53,7 @@ set(ONNXRUNTIME_INCLUDE_DIR "${onnxruntime_prebuilt_SOURCE_DIR}/include")
 # Match dynamic library extensions per platform
 if(WIN32)
     set(ONNXRUNTIME_LIBRARY "${onnxruntime_prebuilt_SOURCE_DIR}/lib/onnxruntime.lib")
+    set(ONNXRUNTIME_DLL "${onnxruntime_prebuilt_SOURCE_DIR}/lib/onnxruntime.dll")
 elseif(APPLE)
     set(ONNXRUNTIME_LIBRARY "${onnxruntime_prebuilt_SOURCE_DIR}/lib/libonnxruntime.dylib")
 else()
@@ -111,17 +112,13 @@ if(PkgConfig_FOUND)
     pkg_check_modules(LEPTONICA lept)
 endif()
 
-
-
-
-
 # -----------------------------------------------------------------------------
 # 5. Executable Target & Libraries
 # -----------------------------------------------------------------------------
-add_executable(Talos
+qt_add_executable(Talos
         src/main.cpp
-        include/window/MainWindow.h
-        src/window/MainWindow.cpp
+        include/MainWindow.h
+        src/MainWindow.cpp
         include/ChatWidget.h
         src/ChatWidget.cpp
         include/CaptureOverlay.h
@@ -129,11 +126,20 @@ add_executable(Talos
         include/AudioRecorder.h
         include/WhisperTranscriber.h
         include/WakeWordDetector.h
-        include/HoleAwareTextLayout.h
-        src/HoleAwareTextLayout.cpp
-        src/OcrService.cpp
         include/OcrService.h
         src/OcrService.cpp
+        resources.qrc
+        src/ChatBackend.cpp
+        include/ChatBackend.h
+        include/ChatBackend.h
+)
+
+qt_add_resources(Talos "chat_resources"
+        PREFIX "/"
+        FILES
+        chat.html
+        style.css
+        app.js
 )
 
 target_include_directories(Talos PRIVATE
@@ -152,12 +158,14 @@ target_link_libraries(Talos PRIVATE
         Qt6::Multimedia
         Qt6::WebEngineWidgets
         Qt6::WebEngineCore
+        Qt6::WebChannel
         whisper
         ONNXRuntime::ONNXRuntime
         ${TESSERACT_LIBRARIES}
         ${LEPTONICA_LIBRARIES}
 )
 
+# Copy web files alongside binary for direct disk debugging + runtime DLL on Windows
 add_custom_command(
         TARGET Talos POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -166,4 +174,16 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/style.css"
         "$<TARGET_FILE_DIR:Talos>/style.css"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/app.js"
+        "$<TARGET_FILE_DIR:Talos>/app.js"
 )
+
+if(WIN32)
+    add_custom_command(
+            TARGET Talos POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${ONNXRUNTIME_DLL}"
+            "$<TARGET_FILE_DIR:Talos>/onnxruntime.dll"
+    )
+endif()
