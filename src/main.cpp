@@ -5,12 +5,25 @@
 #include "MainWindow.h"
 
 int main(int argc, char *argv[]) {
-    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu-compositing --disable-gpu-sandbox --enable-begin-frame-scheduling");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+            "--no-sandbox "
+            "--disable-gpu-sandbox "
+            "--disable-gpu-compositing "
+            "--disable-seccomp-filter-sandbox");
     qputenv("QTWEBENGINE_REMOTE_DEBUGGING", "9223");
-    QApplication app(argc, argv);
 
-    // Allow external resources from CDN
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+
+    int fakeArgc = argc + 1;
+    char** fakeArgv = new char*[fakeArgc];
+    for (int i = 0; i < argc; ++i) {
+        fakeArgv[i] = argv[i];
+    }
+    char noSandboxFlag[] = "--no-sandbox";
+    fakeArgv[argc] = noSandboxFlag;
+
+    QApplication app(fakeArgc, fakeArgv);
+
     QWebEngineProfile *profile = QWebEngineProfile::defaultProfile();
     QWebEngineSettings *settings = profile->settings();
     settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
@@ -18,5 +31,7 @@ int main(int argc, char *argv[]) {
     MainWindow w;
     w.show();
 
-    return app.exec();
+    int result = app.exec();
+    delete[] fakeArgv;
+    return result;
 }

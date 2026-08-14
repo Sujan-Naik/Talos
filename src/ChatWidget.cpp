@@ -94,6 +94,8 @@ ChatWidget::ChatWidget(QWidget *parent)
 
     m_webEngineView->load(QUrl("qrc:///widgets/chat/chat.html"));
     updateSubWidgetLayout();
+
+    setHoleEnabled(false);
 }
 
 void ChatWidget::setHoleRect(const QRect &hole, bool enabled) {

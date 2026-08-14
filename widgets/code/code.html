@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talos Code Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="qrc:///widgets/code/code.css">
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+<header class="toolbar">
+    <div class="toolbar-left">
+        <select id="language-select" class="select">
+            <option value="javascript">JavaScript</option>
+            <option value="cpp">C++</option>
+            <option value="python">Python</option>
+            <option value="html">HTML</option>
+            <option value="json">JSON</option>
+        </select>
+        <select id="theme-select" class="select">
+            <option value="vs-dark">Dark (vs-dark)</option>
+            <option value="vs">Light (vs)</option>
+            <option value="hc-black">High Contrast</option>
+        </select>
+    </div>
+    <div class="toolbar-right">
+        <button id="btn-format" class="btn btn-secondary">Format</button>
+        <button id="btn-save" class="btn btn-primary">Save (Ctrl+S)</button>
+    </div>
+</header>
+
+<div id="main-area">
+    <div id="editor-wrapper">
+        <main id="editor-container" class="editor-container"></main>
+        <div id="annotation-overlay"></div>
+    </div>
+    <div id="side-panel">
+        <div id="side-panel-header">
+            <span>AI Answer</span>
+            <button id="btn-close-side-panel" class="btn-close">×</button>
+        </div>
+        <div id="answer-content"></div>
+    </div>
+</div>
+
+<script src="qrc:///widgets/code/app.js"></script>
+<script>
+    console.log('[inline] inline script loaded');
+
+    document.getElementById('btn-format').addEventListener('click', function () {
+        if (window.editor) {
+            window.editor.getAction('editor.action.formatDocument').run();
+        }
+    });
+
+    document.getElementById('btn-save').addEventListener('click', function () {
+        console.log('Save button clicked');
+    });
+
+    document.getElementById('language-select').addEventListener('change', function (event) {
+        console.log('[inline] language change:', event.target.value);
+        setLanguage(event.target.value);
+    });
+
+    document.getElementById('theme-select').addEventListener('change', function (event) {
+        console.log('[inline] theme change:', event.target.value);
+        setTheme(event.target.value);
+    });
+
+    document.getElementById('btn-close-side-panel').addEventListener('click', function () {
+        var panel = document.getElementById('side-panel');
+        panel.classList.remove('open');
+    });
+</script>
+</body>
+</html>

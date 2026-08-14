@@ -3,7 +3,6 @@
 #include <QWidget>
 #include <QRect>
 #include <QPoint>
-#include <QPushButton>
 #include <QRegion>
 
 class CodeWidget;
@@ -11,13 +10,14 @@ class ChatWidget;
 class AudioRecorder;
 class WakeWordDetector;
 class WhisperTranscriber;
+class QStackedLayout;
 
 class MainWindow : public QWidget {
-Q_OBJECT
+    Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() override = default;
+    ~MainWindow() override;
 
     QRect holeRect() const;
     void chooseAudioDevice();
@@ -25,6 +25,7 @@ public:
 public slots:
     void toggleHole(bool enabled);
     void resetHole();
+    void toggleCodeWidget();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -48,31 +49,35 @@ private:
         HoleTopLeft, HoleTopRight, HoleBottomLeft, HoleBottomRight
     };
 
-    enum AppState {
-        StateListening,
-        StateTriggered,
-        StateProcessing
+    enum class AppState {
+        Listening,
+        Triggered,
+        Processing
     };
 
-    int m_bufferSize = 16;
-    void updateChatGeometry();
+    void updateWidgetsGeometry();
     void updateClickThroughMask();
     void installWebEventFilters();
     Handle handleAt(const QPoint &pos) const;
     void updateCursorShape(const QPoint &pos);
     void toggleMaximize();
+    void processWindowResize(const QPoint &globalDelta);
+    void processHoleResize(const QPoint &globalDelta);
 
+    QWidget *m_containerWidget = nullptr;
+    QStackedLayout *m_stackedLayout = nullptr;
     ChatWidget *m_chatWidget = nullptr;
     CodeWidget *m_codeWidget = nullptr;
     AudioRecorder *m_audioRecorder = nullptr;
     WakeWordDetector *m_wakeWordDetector = nullptr;
     WhisperTranscriber *m_transcriber = nullptr;
 
-    AppState m_appState = StateListening;
+    AppState m_appState = AppState::Listening;
 
+    int m_bufferSize = 16;
     QRect m_holeRect;
     QRect m_previousHoleRect;
-    bool m_holeEnabled = true;
+    bool m_holeEnabled = false;
 
     int m_handleSize = 16;
     int m_borderResizeWidth = 6;
@@ -91,4 +96,5 @@ private:
     QRect m_minButtonRect;
     QRect m_toggleHoleBtnRect;
     QRect m_resetHoleBtnRect;
+    QRect m_toggleCodeBtnRect;
 };
