@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QRegion>
 
+class CodeWidget;
 class ChatWidget;
 class AudioRecorder;
 class WakeWordDetector;
@@ -62,6 +63,7 @@ private:
     void toggleMaximize();
 
     ChatWidget *m_chatWidget = nullptr;
+    CodeWidget *m_codeWidget = nullptr;
     AudioRecorder *m_audioRecorder = nullptr;
     WakeWordDetector *m_wakeWordDetector = nullptr;
     WhisperTranscriber *m_transcriber = nullptr;

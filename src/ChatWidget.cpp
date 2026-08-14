@@ -92,7 +92,7 @@ ChatWidget::ChatWidget(QWidget *parent)
         }
     });
 
-    m_webEngineView->load(QUrl("qrc:///chat.html"));
+    m_webEngineView->load(QUrl("qrc:///widgets/chat/chat.html"));
     updateSubWidgetLayout();
 }
 

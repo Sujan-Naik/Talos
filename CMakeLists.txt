@@ -132,14 +132,17 @@ qt_add_executable(Talos
         src/ChatBackend.cpp
         include/ChatBackend.h
         include/ChatBackend.h
+        src/CodeWidget.cpp
+        include/CodeWidget.h
+        include/CodeWidget.h
 )
 
 qt_add_resources(Talos "chat_resources"
         PREFIX "/"
         FILES
-        chat.html
-        style.css
-        app.js
+        widgets/chat/chat.html
+        widgets/chat/style.css
+        widgets/chat/app.js
 )
 
 target_include_directories(Talos PRIVATE
@@ -169,13 +172,13 @@ target_link_libraries(Talos PRIVATE
 add_custom_command(
         TARGET Talos POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/chat.html"
+        "${CMAKE_CURRENT_SOURCE_DIR}/widgets/chat/chat.html"
         "$<TARGET_FILE_DIR:Talos>/chat.html"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/style.css"
+        "${CMAKE_CURRENT_SOURCE_DIR}/widgets/chat/style.css"
         "$<TARGET_FILE_DIR:Talos>/style.css"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/app.js"
+        "${CMAKE_CURRENT_SOURCE_DIR}/widgets/chat/app.js"
         "$<TARGET_FILE_DIR:Talos>/app.js"
 )
 
