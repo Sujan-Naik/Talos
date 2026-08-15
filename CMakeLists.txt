@@ -135,6 +135,16 @@ qt_add_executable(Talos
         include/CodeWidget.h
         src/CodeBackend.cpp
         include/CodeBackend.h
+        src/StreamEventParser.cpp
+        include/StreamEventParser.h
+        src/ResponseProcessor.cpp
+        include/ResponseProcessor.h
+        src/LLMPromptBuilder.cpp
+        include/LLMPromptBuilder.h
+        src/ApiStreamClient.cpp
+        include/ApiStreamClient.h
+        src/EditorCommandExecutor.cpp
+        include/EditorCommandExecutor.h
 )
 
 qt_add_resources(Talos "widget_resources"

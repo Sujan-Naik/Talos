@@ -20,6 +20,9 @@
             <option value="python">Python</option>
             <option value="html">HTML</option>
             <option value="json">JSON</option>
+            <option value="typescript">TypeScript</option>
+            <option value="rust">Rust</option>
+            <option value="go">Go</option>
         </select>
         <select id="theme-select" class="select">
             <option value="vs-dark">Dark (vs-dark)</option>
@@ -32,7 +35,6 @@
         <button id="btn-save" class="btn btn-primary">Save (Ctrl+S)</button>
     </div>
 </header>
-
 <div id="main-area">
     <div id="editor-wrapper">
         <main id="editor-container" class="editor-container"></main>
@@ -40,40 +42,25 @@
     </div>
     <div id="side-panel">
         <div id="side-panel-header">
-            <span>AI Answer</span>
+            <span>AI Response</span>
             <button id="btn-close-side-panel" class="btn-close">×</button>
         </div>
         <div id="answer-content"></div>
     </div>
 </div>
-
 <script src="qrc:///widgets/code/app.js"></script>
 <script>
-    console.log('[inline] inline script loaded');
-
-    document.getElementById('btn-format').addEventListener('click', function () {
-        if (window.editor) {
-            window.editor.getAction('editor.action.formatDocument').run();
-        }
+    document.getElementById('btn-format').addEventListener('click', () => {
+        if (window.editor) window.editor.getAction('editor.action.formatDocument').run();
     });
-
-    document.getElementById('btn-save').addEventListener('click', function () {
-        console.log('Save button clicked');
+    document.getElementById('language-select').addEventListener('change', (e) => {
+        setLanguage(e.target.value);
     });
-
-    document.getElementById('language-select').addEventListener('change', function (event) {
-        console.log('[inline] language change:', event.target.value);
-        setLanguage(event.target.value);
+    document.getElementById('theme-select').addEventListener('change', (e) => {
+        setTheme(e.target.value);
     });
-
-    document.getElementById('theme-select').addEventListener('change', function (event) {
-        console.log('[inline] theme change:', event.target.value);
-        setTheme(event.target.value);
-    });
-
-    document.getElementById('btn-close-side-panel').addEventListener('click', function () {
-        var panel = document.getElementById('side-panel');
-        panel.classList.remove('open');
+    document.getElementById('btn-close-side-panel').addEventListener('click', () => {
+        document.getElementById('side-panel').classList.remove('open');
     });
 </script>
 </body>

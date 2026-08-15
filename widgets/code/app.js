@@ -1,7 +1,6 @@
 window.backend = null;
 window.editor = null;
 window.overlayEl = null;
-
 console.log('[app.js] file loaded and parsed successfully');
 
 require.config({
@@ -18,7 +17,6 @@ function notifyBackendCodeChange() {
 var currentAnnotations = [];
 var annotationMarkers = [];
 var activeBubble = null;
-var overlayEl = null;
 
 function clearAnnotationOverlay() {
     if (overlayEl) {
@@ -32,7 +30,6 @@ function clearAnnotationOverlay() {
 
 function updateAnnotationPositions() {
     if (!window.editor || !overlayEl) return;
-
     annotationMarkers.forEach(function (item) {
         var line = item.annotation.startLine;
         var top = window.editor.getTopForLineNumber(line) - window.editor.getScrollTop();
@@ -42,20 +39,16 @@ function updateAnnotationPositions() {
 
 function createMarker(annotation) {
     if (!window.editor || !overlayEl) return;
-
     var marker = document.createElement('div');
     marker.className = 'annotation-marker ' + (annotation.severity || 'info');
     marker.textContent = 'i';
-
     var top = window.editor.getTopForLineNumber(annotation.startLine) - window.editor.getScrollTop();
     marker.style.top = top + 'px';
     marker.style.left = '10px';
-
     marker.addEventListener('click', function (event) {
         event.stopPropagation();
         toggleBubble(marker, annotation);
     });
-
     overlayEl.appendChild(marker);
     annotationMarkers.push({ marker: marker, annotation: annotation });
 }
@@ -65,10 +58,8 @@ function toggleBubble(marker, annotation) {
         activeBubble.remove();
         activeBubble = null;
     }
-
     var bubble = document.createElement('div');
     bubble.className = 'annotation-bubble visible';
-
     var closeBtn = document.createElement('button');
     closeBtn.className = 'annotation-close';
     closeBtn.textContent = '×';
@@ -77,24 +68,18 @@ function toggleBubble(marker, annotation) {
         bubble.remove();
         activeBubble = null;
     });
-
     var text = document.createElement('div');
     text.textContent = annotation.message || 'No message';
-
     bubble.appendChild(closeBtn);
     bubble.appendChild(text);
-
     var markerRect = marker.getBoundingClientRect();
     var overlayRect = overlayEl.getBoundingClientRect();
     var left = markerRect.left - overlayRect.left + 25;
     var top = markerRect.top - overlayRect.top;
-
     bubble.style.left = left + 'px';
     bubble.style.top = top + 'px';
-
     overlayEl.appendChild(bubble);
     activeBubble = bubble;
-
     setTimeout(function () {
         document.addEventListener('click', function closeHandler(e) {
             if (activeBubble && !activeBubble.contains(e.target) && e.target !== marker) {
@@ -109,7 +94,6 @@ function toggleBubble(marker, annotation) {
 function renderAnnotations(annotations) {
     clearAnnotationOverlay();
     if (!Array.isArray(annotations) || annotations.length === 0) return;
-
     currentAnnotations = annotations;
     annotations.forEach(function (ann) {
         createMarker(ann);
@@ -117,7 +101,7 @@ function renderAnnotations(annotations) {
     updateAnnotationPositions();
 }
 
-// ----- Markdown-ish renderer for the side panel -----
+// ----- Markdown renderer for the side panel -----
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
@@ -132,35 +116,22 @@ function markdownToHtml(text) {
     var codeBlocks = [];
     var placeholder = '%%CODEBLOCK%%';
 
-    // Extract fenced code blocks first
     escaped = escaped.replace(/```([\s\S]*?)```/g, function (match, code) {
-        // Remove optional language identifier from first line
         code = code.replace(/^[^\n]*\n?/, '');
         var html = '<pre><code>' + code + '</code></pre>';
         codeBlocks.push(html);
         return placeholder + (codeBlocks.length - 1) + placeholder;
     });
 
-    // Inline code
     escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-    // Bold
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-    // Italic
     escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-    // Newlines to <br>
     escaped = escaped.replace(/\n/g, '<br>');
-
-    // Simple bullet lines
     escaped = escaped.replace(/(<br>|^)- /g, '$1• ');
 
-    // Restore code blocks
     for (var i = 0; i < codeBlocks.length; i++) {
         escaped = escaped.split(placeholder + i + placeholder).join(codeBlocks[i]);
     }
-
     return escaped;
 }
 
@@ -175,7 +146,6 @@ function showGeneralAnswer(text) {
 require(['vs/editor/editor.main'], function () {
     console.log('[app.js] monaco require callback entered');
     window.monaco = monaco;
-
     window.editor = monaco.editor.create(document.getElementById('editor-container'), {
         value: '// Start typing code here...\n',
         language: 'cpp',
@@ -188,7 +158,8 @@ require(['vs/editor/editor.main'], function () {
         scrollBeyondLastLine: false,
         roundedSelection: true,
         padding: { top: 12, bottom: 12 },
-        glyphMargin: false
+        glyphMargin: false,
+        wordWrap: 'off'
     });
 
     overlayEl = document.getElementById('annotation-overlay');
@@ -281,7 +252,7 @@ window.appendCodeToEditor = function (code) {
     }
 };
 
-// ----- applyEdits with validation/clamping -----
+// ----- Legacy Range Edits -----
 window.applyEdits = function (edits) {
     console.log('[app.js] applyEdits called');
     if (!window.editor || !window.monaco) return;
@@ -295,27 +266,11 @@ window.applyEdits = function (edits) {
             return;
         }
     }
-
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-        console.log('[app.js] applyEdits: no edits to apply');
-        return;
-    }
+    if (!Array.isArray(parsed) || parsed.length === 0) return;
 
     var model = window.editor.getModel();
     var totalLines = model.getLineCount();
-
-    // Sort by start position
-    parsed.sort(function (a, b) {
-        var aStartLine = Number(a.startLine) || 1;
-        var bStartLine = Number(b.startLine) || 1;
-        if (aStartLine !== bStartLine) return aStartLine - bStartLine;
-        var aStartCol = Number(a.startColumn) || 1;
-        var bStartCol = Number(b.startColumn) || 1;
-        return aStartCol - bStartCol;
-    });
-
     var operations = [];
-    var skipped = [];
 
     for (var i = 0; i < parsed.length; i++) {
         var op = parsed[i];
@@ -324,117 +279,201 @@ window.applyEdits = function (edits) {
         var endLine = Number(op.endLine);
         var endColumn = Number(op.endColumn);
 
-        if (!isFinite(startLine) || !isFinite(startColumn) ||
-            !isFinite(endLine) || !isFinite(endColumn)) {
-            skipped.push({ op: op, reason: 'non-numeric line/column' });
-            continue;
-        }
-
-        var clampedStartLine = startLine;
-        var clampedStartColumn = startColumn;
-        var clampedEndLine = endLine;
-        var clampedEndColumn = endColumn;
-
-        // Clamp lines to [1, totalLines+1]
-        if (clampedStartLine > totalLines + 1) {
-            console.warn('[app.js] Clamping startLine', clampedStartLine, 'to EOF', totalLines + 1);
-            clampedStartLine = totalLines + 1;
-            clampedStartColumn = 1;
-        }
-        if (clampedEndLine > totalLines + 1) {
-            console.warn('[app.js] Clamping endLine', clampedEndLine, 'to EOF', totalLines + 1);
-            clampedEndLine = totalLines + 1;
-            clampedEndColumn = 1;
-        }
-
-        // Clamp columns
-        if (clampedStartLine >= 1 && clampedStartLine <= totalLines) {
-            var maxColStart = model.getLineMaxColumn(clampedStartLine) + 1;
-            if (clampedStartColumn > maxColStart) clampedStartColumn = maxColStart;
-        } else if (clampedStartLine === totalLines + 1) {
-            clampedStartColumn = 1;
-        }
-
-        if (clampedEndLine >= 1 && clampedEndLine <= totalLines) {
-            var maxColEnd = model.getLineMaxColumn(clampedEndLine) + 1;
-            if (clampedEndColumn > maxColEnd) clampedEndColumn = maxColEnd;
-        } else if (clampedEndLine === totalLines + 1) {
-            clampedEndColumn = 1;
-        }
-
-        if (clampedStartLine < 1 || clampedStartColumn < 1 ||
-            clampedEndLine < 1 || clampedEndColumn < 1) {
-            skipped.push({ op: op, reason: 'clamped to invalid position' });
-            continue;
-        }
-
-        if (clampedStartLine > clampedEndLine ||
-            (clampedStartLine === clampedEndLine && clampedStartColumn > clampedEndColumn)) {
-            skipped.push({ op: op, reason: 'reversed range after clamping' });
-            continue;
-        }
+        if (!isFinite(startLine) || !isFinite(startColumn) || !isFinite(endLine) || !isFinite(endColumn)) continue;
+        if (startLine < 1 || startColumn < 1 || endLine < 1 || endColumn < 1) continue;
+        if (startLine > endLine || (startLine === endLine && startColumn > endColumn)) continue;
 
         var text = (op.text !== undefined && op.text !== null) ? String(op.text) : '';
-
         operations.push({
-            range: new window.monaco.Range(
-                clampedStartLine, clampedStartColumn,
-                clampedEndLine, clampedEndColumn
-            ),
-            text: text
+            range: new window.monaco.Range(startLine, startColumn, endLine, endColumn),
+            text: text,
+            forceMoveMarkers: true
         });
     }
 
-    var finalOps = [];
-    for (var j = 0; j < operations.length; j++) {
-        var current = operations[j];
-
-        if (current.text === '' &&
-            current.range.startLineNumber === current.range.endLineNumber &&
-            current.range.startColumn === current.range.endColumn) {
-            skipped.push({ op: parsed[j], reason: 'zero-length deletion' });
-            continue;
+    operations.sort(function (a, b) {
+        if (a.range.startLineNumber !== b.range.startLineNumber) {
+            return b.range.startLineNumber - a.range.startLineNumber;
         }
+        return b.range.startColumn - a.range.startColumn;
+    });
 
-        if (finalOps.length > 0) {
-            var last = finalOps[finalOps.length - 1].range;
-            var currRange = current.range;
-            var overlap = (currRange.startLineNumber < last.endLineNumber ||
-                (currRange.startLineNumber === last.endLineNumber &&
-                    currRange.startColumn < last.endColumn));
-
-            if (overlap) {
-                skipped.push({ op: parsed[j], reason: 'overlap with previous edit' });
-                continue;
-            }
-        }
-
-        finalOps.push(current);
-    }
-
-    if (finalOps.length > 0) {
+    if (operations.length > 0) {
         try {
-            window.editor.executeEdits('backend', finalOps);
+            window.editor.executeEdits('backend', operations);
             clearAnnotationOverlay();
             notifyBackendCodeChange();
-            console.log('[app.js] Applied', finalOps.length, 'edits');
         } catch (e) {
             console.error('[app.js] executeEdits failed:', e);
         }
-    } else {
-        console.warn('[app.js] No valid edits to apply. Skipped edits:', skipped);
     }
 };
 
+// ----- Aider-style SEARCH/REPLACE engine -----
+// ----- Aider-style SEARCH/REPLACE engine -----
+// ----- Aider-style SEARCH/REPLACE engine -----
+// ----- Aider-style SEARCH/REPLACE engine -----
+window.applySearchReplace = function (blocks) {
+    console.log('[app.js] applySearchReplace called');
+    if (!window.editor || !window.monaco) {
+        console.error('[app.js] Editor not initialized');
+        return false;
+    }
+
+    var parsed = blocks;
+    if (typeof blocks === 'string') {
+        try {
+            parsed = JSON.parse(blocks);
+        } catch (e) {
+            console.error('[app.js] applySearchReplace JSON.parse failed:', e);
+            return false;
+        }
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+        console.warn('[app.js] No blocks to apply');
+        return false;
+    }
+
+    var model = window.editor.getModel();
+    var fullText = model.getValue();
+    var operations = [];
+    var failed = [];
+    var successCount = 0;
+
+    // Normalize helpers
+    function normalizeLineEndings(text) {
+        return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    }
+    function normalizeTrailingWhitespace(text) {
+        return text.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');
+    }
+
+    for (var i = 0; i < parsed.length; i++) {
+        var block = parsed[i];
+        var search = block.search != null ? String(block.search) : '';
+        var replace = block.replace != null ? String(block.replace) : '';
+
+        // Handle empty search as insertion at beginning
+        if (search === '') {
+            if (replace === '') {
+                console.warn('[app.js] Block', i, ': both search and replace empty, skipping');
+                failed.push({ index: i, reason: 'empty search and replace' });
+                continue;
+            }
+            // Insert at position 0
+            operations.push({
+                range: new window.monaco.Range(1, 1, 1, 1),
+                text: replace,
+                forceMoveMarkers: true,
+                originalIndex: i
+            });
+            successCount++;
+            console.log('[app.js] Block', i, ': inserted at beginning');
+            continue;
+        }
+
+        var searchIdx = -1;
+        var matchedText = '';
+
+        // Strategy 1: Exact match
+        searchIdx = fullText.indexOf(search);
+        if (searchIdx !== -1) {
+            matchedText = search;
+            console.log('[app.js] Block', i, ': exact match at', searchIdx);
+        }
+
+        // Strategy 2: Normalized line endings
+        if (searchIdx === -1) {
+            var normFull = normalizeLineEndings(fullText);
+            var normSearch = normalizeLineEndings(search);
+            var normIdx = normFull.indexOf(normSearch);
+            if (normIdx !== -1) {
+                // Map back to original indices (approximation, safe for common cases)
+                searchIdx = fullText.indexOf(normSearch);
+                if (searchIdx !== -1) {
+                    matchedText = normSearch;
+                }
+                console.log('[app.js] Block', i, ': matched after line-ending normalization');
+            }
+        }
+
+        // Strategy 3: Normalized trailing whitespace
+        if (searchIdx === -1) {
+            var normFullWS = normalizeTrailingWhitespace(normalizeLineEndings(fullText));
+            var normSearchWS = normalizeTrailingWhitespace(normalizeLineEndings(search));
+            var wsIdx = normFullWS.indexOf(normSearchWS);
+            if (wsIdx !== -1) {
+                // Try to find corresponding position in original
+                searchIdx = fullText.indexOf(search.trim());
+                if (searchIdx !== -1) {
+                    matchedText = search.trim();
+                }
+                console.log('[app.js] Block', i, ': matched after whitespace normalization');
+            }
+        }
+
+        if (searchIdx === -1) {
+            console.error('[app.js] Block', i, ': search text not found');
+            console.error('[app.js] Search text:', JSON.stringify(search.substring(0, 200)));
+            failed.push({ index: i, reason: 'search not found' });
+            continue;
+        }
+
+        // Calculate range
+        var before = fullText.substring(0, searchIdx);
+        var startLine = (before.match(/\n/g) || []).length + 1;
+        var lastNl = before.lastIndexOf('\n');
+        var startColumn = (lastNl === -1 ? before.length : before.length - lastNl - 1) + 1;
+
+        var endOffset = searchIdx + matchedText.length;
+        var afterStart = fullText.substring(0, endOffset);
+        var endLine = (afterStart.match(/\n/g) || []).length + 1;
+        var lastNlEnd = afterStart.lastIndexOf('\n');
+        var endColumn = (lastNlEnd === -1 ? afterStart.length : afterStart.length - lastNlEnd - 1) + 1;
+
+        operations.push({
+            range: new window.monaco.Range(startLine, startColumn, endLine, endColumn),
+            text: replace,
+            forceMoveMarkers: true,
+            originalIndex: i
+        });
+        successCount++;
+        console.log('[app.js] Block', i, ': applied');
+    }
+
+    // Sort operations bottom-up
+    operations.sort(function (a, b) {
+        if (a.range.startLineNumber !== b.range.startLineNumber) {
+            return b.range.startLineNumber - a.range.startLineNumber;
+        }
+        return b.range.startColumn - a.range.startColumn;
+    });
+
+    if (operations.length > 0) {
+        try {
+            window.editor.executeEdits('backend-sr', operations);
+            clearAnnotationOverlay();
+            notifyBackendCodeChange();
+            console.log('[app.js] Applied', operations.length, 'edits');
+        } catch (e) {
+            console.error('[app.js] executeEdits failed:', e);
+            return false;
+        }
+    }
+
+    if (failed.length > 0) {
+        console.warn('[app.js]', failed.length, 'blocks failed');
+        return false;
+    }
+    return true;
+};
 window.clearAnnotations = function () {
     clearAnnotationOverlay();
 };
 
 window.setAnnotations = function (annotations) {
     console.log('[app.js] setAnnotations called');
-    if (!window.editor || !overlayEl) {
-        return;
-    }
+    if (!window.editor || !overlayEl) return;
 
     var parsedAnnotations = annotations;
     if (typeof annotations === 'string') {
@@ -445,11 +484,7 @@ window.setAnnotations = function (annotations) {
             return;
         }
     }
-
-    if (!Array.isArray(parsedAnnotations)) {
-        return;
-    }
-
+    if (!Array.isArray(parsedAnnotations)) return;
     renderAnnotations(parsedAnnotations);
 };
 
