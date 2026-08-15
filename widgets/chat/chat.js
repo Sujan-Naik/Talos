@@ -1,4 +1,9 @@
 window.backend = null;
+window.ttsEnabled = false;
+window.ttsBuffer = '';
+window.ttsSpeechQueue = [];          // Queue of sentences to speak
+window.ttsProcessing = false;        // Whether we are currently speaking
+window.ttsSpeechTimer = null;        // Timer to pace the backend requests
 
 window.updateHoleRect = function(x, y, width, height, viewWidth) {
     const spacer = document.getElementById('hole-spacer');
@@ -52,11 +57,203 @@ function setMicState(text) {
     if (btn) btn.textContent = text;
 }
 
+function cleanMarkdown(text) {
+    return text
+        .replace(/```[\s\S]*?```/g, ' Code snippet omitted. ')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/[*_#~\[\]]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+// Global hook: if your Qt backend can notify JS when speech ends, call this!
+// This will override the fallback JS estimator and make audio spacing perfect.
+window.onTtsFinished = function() {
+    if (window.ttsSpeechTimer) {
+        clearTimeout(window.ttsSpeechTimer);
+        window.ttsSpeechTimer = null;
+    }
+    window.ttsProcessing = false;
+    _processSpeechQueue();
+};
+
+// Internal function to actually speak a single utterance, invoking onEnd when done
+function _speakUtterance(text, onEnd) {
+    if (!window.ttsEnabled || !text) {
+        if (onEnd) onEnd();
+        return;
+    }
+
+    const plain = cleanMarkdown(text);
+    if (!plain) {
+        if (onEnd) onEnd();
+        return;
+    }
+
+    if (window.backend && typeof window.backend.speak === 'function') {
+        window.backend.speak(plain);
+
+        // Kokoro gets overwhelmed if flooded with overlapping requests.
+        // We estimate the audio duration: ~75ms per char + 400ms base pause.
+        // If your Qt backend triggers window.onTtsFinished(), this timer acts as a failsafe.
+        const estimatedMs = plain.length * 75 + 400;
+        window.ttsSpeechTimer = setTimeout(() => {
+            window.ttsSpeechTimer = null;
+            if (onEnd) onEnd();
+        }, estimatedMs);
+
+    } else if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(plain);
+        u.rate = 1.0;
+        u.pitch = 1.0;
+        u.onend = () => { if (onEnd) onEnd(); };
+        u.onerror = () => { if (onEnd) onEnd(); };
+        window.speechSynthesis.speak(u);
+    } else {
+        if (onEnd) onEnd();
+    }
+}
+
+// Strict Queue Manager: Never process the next item until the current one finishes playing.
+function _processSpeechQueue() {
+    if (window.ttsProcessing || window.ttsSpeechQueue.length === 0) return;
+    window.ttsProcessing = true;
+
+    const nextText = window.ttsSpeechQueue.shift();
+    _speakUtterance(nextText, () => {
+        window.ttsProcessing = false;
+        _processSpeechQueue(); // process remaining items safely
+    });
+}
+
+function _enqueueSpeech(text) {
+    if (!text) return;
+    window.ttsSpeechQueue.push(text);
+    _processSpeechQueue();
+}
+
+function speakText(text, immediate = false) {
+    if (immediate) {
+        window.ttsSpeechQueue = [];
+        window.ttsProcessing = false;
+        if (window.ttsSpeechTimer) clearTimeout(window.ttsSpeechTimer);
+
+        _speakUtterance(text, () => {});
+        return;
+    }
+    _enqueueSpeech(text);
+}
+
+function queueForSpeech(deltaText, isComplete = false) {
+    if (!window.ttsEnabled) return;
+
+    // 1. Accumulate raw streams to prevent breaking formatting or partial words
+    if (deltaText) {
+        window.ttsBuffer += deltaText;
+    }
+
+    // 2. Clean fully closed code blocks first so they don't block sentence detection
+    window.ttsBuffer = window.ttsBuffer.replace(/```[\s\S]*?```/g, ' Code snippet omitted. ');
+
+    // 3. Wait until any open markdown block closes before splitting sentences
+    if (/```/.test(window.ttsBuffer) && !isComplete) {
+        return;
+    }
+
+    // 4. Safe sentence detection (match punctuation followed by whitespace/end)
+    const sentenceRegex = /([.!?])(?:\s+|$)/g;
+    let match;
+    let lastIndex = 0;
+    const sentences = [];
+
+    while ((match = sentenceRegex.exec(window.ttsBuffer)) !== null) {
+        const splitIndex = match.index + match[1].length;
+        sentences.push(window.ttsBuffer.substring(lastIndex, splitIndex));
+        lastIndex = splitIndex;
+    }
+
+    if (sentences.length > 0) {
+        for (const raw of sentences) {
+            const cleaned = cleanMarkdown(raw);
+            if (cleaned) {
+                _enqueueSpeech(cleaned);
+            }
+        }
+        window.ttsBuffer = window.ttsBuffer.substring(lastIndex).trimStart();
+    } else if (isComplete) {
+        // Last chunk payload, sweep up any remaining string without ending punctuation
+        const cleaned = cleanMarkdown(window.ttsBuffer);
+        if (cleaned) {
+            _enqueueSpeech(cleaned);
+        }
+        window.ttsBuffer = '';
+    }
+}
+
+function flushTTSBuffer() {
+    if (!window.ttsEnabled) return;
+    if (window.ttsBuffer.trim()) {
+        const cleaned = cleanMarkdown(window.ttsBuffer);
+        if (cleaned) {
+            _enqueueSpeech(cleaned);
+        }
+        window.ttsBuffer = '';
+    }
+}
+
+function stopSpeech() {
+    window.ttsBuffer = '';
+    window.ttsSpeechQueue = [];
+    window.ttsProcessing = false;
+    if (window.ttsSpeechTimer) {
+        clearTimeout(window.ttsSpeechTimer);
+        window.ttsSpeechTimer = null;
+    }
+
+    if (window.backend && typeof window.backend.stopSpeech === 'function') {
+        window.backend.stopSpeech();
+    }
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+}
+
+function toggleTTS(forcedState) {
+    const btn = document.getElementById('tts-btn');
+    if (typeof forcedState === 'boolean') {
+        window.ttsEnabled = forcedState;
+    } else {
+        window.ttsEnabled = !window.ttsEnabled;
+    }
+
+    if (btn) {
+        btn.textContent = window.ttsEnabled ? 'TTS: On' : 'TTS: Off';
+        btn.classList.toggle('active', window.ttsEnabled);
+        if (window.ttsEnabled) {
+            btn.classList.add('bg-green-500', 'text-black');
+            btn.classList.remove('bg-gray-600', 'text-white');
+        } else {
+            btn.classList.remove('bg-green-500', 'text-black');
+            btn.classList.add('bg-gray-600', 'text-white');
+        }
+    }
+
+    if (window.backend && typeof window.backend.onTtsToggled === 'function') {
+        window.backend.onTtsToggled(window.ttsEnabled);
+    }
+
+    if (!window.ttsEnabled) {
+        stopSpeech();
+    }
+}
+
 function sendMessage() {
     const input = document.getElementById('message-input');
     const text = input.value.trim();
 
     if (!text) return;
+
+    stopSpeech();
 
     input.value = '';
     autoResizeInput(input);
@@ -141,6 +338,10 @@ function appendMessage(text, isUser) {
     row.appendChild(msgCopyBtn);
     messagesDiv.appendChild(row);
 
+    if (!isUser && window.ttsEnabled) {
+        finalizeAiMessage();
+    }
+
     scrollToBottom();
 }
 
@@ -148,10 +349,18 @@ function appendToLastAiMessage(deltaText) {
     const messagesDiv = document.getElementById('messages');
     if (!messagesDiv) return;
 
-    const aiRows = messagesDiv.getElementsByClassName('message-row ai');
+    let aiRows = messagesDiv.getElementsByClassName('message-row ai');
     if (aiRows.length === 0) {
-        appendMessage(deltaText, false);
-        return;
+        // FIX: Instead of calling appendMessage (which flushes empty TTS buffers),
+        // we directly build the empty AI container so the first token is preserved.
+        const row = document.createElement('div');
+        row.className = 'message-row ai';
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.dataset.rawText = '';
+        row.appendChild(bubble);
+        messagesDiv.appendChild(row);
+        aiRows = messagesDiv.getElementsByClassName('message-row ai');
     }
 
     const lastAiRow = aiRows[aiRows.length - 1];
@@ -174,9 +383,20 @@ function appendToLastAiMessage(deltaText) {
         } else {
             lastAiRow.appendChild(createMsgCopyButton(bubble.dataset.rawText));
         }
+
+        if (window.ttsEnabled) {
+            // Because we fixed row generation above, the very first token now properly triggers here.
+            queueForSpeech(deltaText, false);
+        }
     }
 
     scrollToBottom();
+}
+
+function finalizeAiMessage() {
+    if (window.ttsEnabled) {
+        flushTTSBuffer();
+    }
 }
 
 function scrollToBottom() {
@@ -196,6 +416,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const sendBtn = document.getElementById('send-btn');
     const captureBtn = document.getElementById('capture-btn');
     const micBtn = document.getElementById('mic-btn');
+    const ttsBtn = document.getElementById('tts-btn');
     const expandBtn = document.getElementById('expand-btn');
     const input = document.getElementById('message-input');
     const wrapper = document.getElementById('root-wrapper');
@@ -229,6 +450,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (window.backend && typeof window.backend.requestToggleMic === 'function') {
             window.backend.requestToggleMic();
         }
+    });
+
+    ttsBtn.addEventListener('click', function() {
+        toggleTTS();
     });
 
     input.addEventListener('keydown', function(e) {

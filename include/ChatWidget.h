@@ -2,8 +2,6 @@
 #define CHATWIDGET_H
 
 #include <QWidget>
-#include <QTextEdit>
-#include <QPushButton>
 #include <QWebEngineView>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -17,6 +15,7 @@
 #include "AudioRecorder.h"
 #include "ChatBackend.h"
 #include "WhisperTranscriber.h"
+#include "TtsManager.h"
 
 class ChatWidget : public QWidget {
     Q_OBJECT
@@ -38,7 +37,6 @@ signals:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
-    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void captureAndSetText();
@@ -52,8 +50,6 @@ private:
     void appendMessageAsUser(const QString &text);
     void appendMessageAsAi(const QString &text);
     void sendApiRequest();
-    void loadExternalStyleSheet();
-    QString getInitialHtml() const;
     void updateSubWidgetLayout();
     void appendMessage(const QString &text, bool isUser);
     void appendToCurrentAiMessage(const QString &deltaText);
@@ -61,16 +57,13 @@ private:
     void updateClippingMask();
 
     QWebEngineView *m_webEngineView{nullptr};
-    QTextEdit *m_inputBox{nullptr};
-    QPushButton *m_captureButton{nullptr};
-    QPushButton *m_micButton{nullptr};
-    QPushButton *m_sendButton{nullptr};
 
     AudioRecorder *m_recorder{nullptr};
     WhisperTranscriber *m_transcriber{nullptr};
     QTimer *m_vadTimer{nullptr};
     CaptureOverlay *m_overlay{nullptr};
     ChatBackend *m_backend{nullptr};
+    TtsManager *m_ttsManager{nullptr};
 
     QNetworkAccessManager *m_networkManager{nullptr};
     QNetworkReply *m_currentReply{nullptr};

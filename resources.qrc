@@ -3,6 +3,6 @@
     <qresource prefix="/">
         <file>chat.html</file>
         <file>style.css</file>
-        <file>app.js</file>
+        <file>chat.js</file>
     </qresource>
 </RCC>

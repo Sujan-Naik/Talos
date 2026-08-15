@@ -1,7 +1,7 @@
 window.backend = null;
 window.editor = null;
 window.overlayEl = null;
-console.log('[app.js] file loaded and parsed successfully');
+console.log('[code.js] file loaded and parsed successfully');
 
 require.config({
     paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }
@@ -144,7 +144,7 @@ function showGeneralAnswer(text) {
 
 // ----- Monaco setup -----
 require(['vs/editor/editor.main'], function () {
-    console.log('[app.js] monaco require callback entered');
+    console.log('[code.js] monaco require callback entered');
     window.monaco = monaco;
     window.editor = monaco.editor.create(document.getElementById('editor-container'), {
         value: '// Start typing code here...\n',
@@ -174,7 +174,7 @@ require(['vs/editor/editor.main'], function () {
     });
 
     notifyBackendCodeChange();
-    console.log('[app.js] monaco editor created');
+    console.log('[code.js] monaco editor created');
 });
 
 // ----- WebChannel init -----
@@ -210,21 +210,21 @@ window.getCode = getCode;
 window.setCode = setCode;
 
 function setLanguage(lang) {
-    console.log('[app.js] setLanguage called with:', lang);
+    console.log('[code.js] setLanguage called with:', lang);
     if (window.editor && window.monaco) {
         window.monaco.editor.setModelLanguage(window.editor.getModel(), lang);
     }
 }
 
 function setTheme(theme) {
-    console.log('[app.js] setTheme called with:', theme);
+    console.log('[code.js] setTheme called with:', theme);
     if (window.editor && window.monaco) {
         window.editor.updateOptions({ theme: theme });
     }
 }
 
 window.setEditorCode = function (code, lang) {
-    console.log('[app.js] setEditorCode called with code length:', code ? code.length : 0, 'lang:', lang);
+    console.log('[code.js] setEditorCode called with code length:', code ? code.length : 0, 'lang:', lang);
     if (window.editor) {
         var state = window.editor.saveViewState();
         window.editor.setValue(code);
@@ -239,7 +239,7 @@ window.setEditorCode = function (code, lang) {
 };
 
 window.appendCodeToEditor = function (code) {
-    console.log('[app.js] appendCodeToEditor called with code length:', code ? code.length : 0);
+    console.log('[code.js] appendCodeToEditor called with code length:', code ? code.length : 0);
     if (window.editor) {
         var model = window.editor.getModel();
         var lastLine = model.getLineCount();
@@ -254,7 +254,7 @@ window.appendCodeToEditor = function (code) {
 
 // ----- Legacy Range Edits -----
 window.applyEdits = function (edits) {
-    console.log('[app.js] applyEdits called');
+    console.log('[code.js] applyEdits called');
     if (!window.editor || !window.monaco) return;
 
     var parsed = edits;
@@ -262,7 +262,7 @@ window.applyEdits = function (edits) {
         try {
             parsed = JSON.parse(edits);
         } catch (e) {
-            console.error('[app.js] applyEdits JSON.parse failed:', e);
+            console.error('[code.js] applyEdits JSON.parse failed:', e);
             return;
         }
     }
@@ -304,7 +304,7 @@ window.applyEdits = function (edits) {
             clearAnnotationOverlay();
             notifyBackendCodeChange();
         } catch (e) {
-            console.error('[app.js] executeEdits failed:', e);
+            console.error('[code.js] executeEdits failed:', e);
         }
     }
 };
@@ -314,9 +314,9 @@ window.applyEdits = function (edits) {
 // ----- Aider-style SEARCH/REPLACE engine -----
 // ----- Aider-style SEARCH/REPLACE engine -----
 window.applySearchReplace = function (blocks) {
-    console.log('[app.js] applySearchReplace called');
+    console.log('[code.js] applySearchReplace called');
     if (!window.editor || !window.monaco) {
-        console.error('[app.js] Editor not initialized');
+        console.error('[code.js] Editor not initialized');
         return false;
     }
 
@@ -325,12 +325,12 @@ window.applySearchReplace = function (blocks) {
         try {
             parsed = JSON.parse(blocks);
         } catch (e) {
-            console.error('[app.js] applySearchReplace JSON.parse failed:', e);
+            console.error('[code.js] applySearchReplace JSON.parse failed:', e);
             return false;
         }
     }
     if (!Array.isArray(parsed) || parsed.length === 0) {
-        console.warn('[app.js] No blocks to apply');
+        console.warn('[code.js] No blocks to apply');
         return false;
     }
 
@@ -356,7 +356,7 @@ window.applySearchReplace = function (blocks) {
         // Handle empty search as insertion at beginning
         if (search === '') {
             if (replace === '') {
-                console.warn('[app.js] Block', i, ': both search and replace empty, skipping');
+                console.warn('[code.js] Block', i, ': both search and replace empty, skipping');
                 failed.push({ index: i, reason: 'empty search and replace' });
                 continue;
             }
@@ -368,7 +368,7 @@ window.applySearchReplace = function (blocks) {
                 originalIndex: i
             });
             successCount++;
-            console.log('[app.js] Block', i, ': inserted at beginning');
+            console.log('[code.js] Block', i, ': inserted at beginning');
             continue;
         }
 
@@ -379,7 +379,7 @@ window.applySearchReplace = function (blocks) {
         searchIdx = fullText.indexOf(search);
         if (searchIdx !== -1) {
             matchedText = search;
-            console.log('[app.js] Block', i, ': exact match at', searchIdx);
+            console.log('[code.js] Block', i, ': exact match at', searchIdx);
         }
 
         // Strategy 2: Normalized line endings
@@ -393,7 +393,7 @@ window.applySearchReplace = function (blocks) {
                 if (searchIdx !== -1) {
                     matchedText = normSearch;
                 }
-                console.log('[app.js] Block', i, ': matched after line-ending normalization');
+                console.log('[code.js] Block', i, ': matched after line-ending normalization');
             }
         }
 
@@ -408,13 +408,13 @@ window.applySearchReplace = function (blocks) {
                 if (searchIdx !== -1) {
                     matchedText = search.trim();
                 }
-                console.log('[app.js] Block', i, ': matched after whitespace normalization');
+                console.log('[code.js] Block', i, ': matched after whitespace normalization');
             }
         }
 
         if (searchIdx === -1) {
-            console.error('[app.js] Block', i, ': search text not found');
-            console.error('[app.js] Search text:', JSON.stringify(search.substring(0, 200)));
+            console.error('[code.js] Block', i, ': search text not found');
+            console.error('[code.js] Search text:', JSON.stringify(search.substring(0, 200)));
             failed.push({ index: i, reason: 'search not found' });
             continue;
         }
@@ -438,7 +438,7 @@ window.applySearchReplace = function (blocks) {
             originalIndex: i
         });
         successCount++;
-        console.log('[app.js] Block', i, ': applied');
+        console.log('[code.js] Block', i, ': applied');
     }
 
     // Sort operations bottom-up
@@ -454,15 +454,15 @@ window.applySearchReplace = function (blocks) {
             window.editor.executeEdits('backend-sr', operations);
             clearAnnotationOverlay();
             notifyBackendCodeChange();
-            console.log('[app.js] Applied', operations.length, 'edits');
+            console.log('[code.js] Applied', operations.length, 'edits');
         } catch (e) {
-            console.error('[app.js] executeEdits failed:', e);
+            console.error('[code.js] executeEdits failed:', e);
             return false;
         }
     }
 
     if (failed.length > 0) {
-        console.warn('[app.js]', failed.length, 'blocks failed');
+        console.warn('[code.js]', failed.length, 'blocks failed');
         return false;
     }
     return true;
@@ -472,7 +472,7 @@ window.clearAnnotations = function () {
 };
 
 window.setAnnotations = function (annotations) {
-    console.log('[app.js] setAnnotations called');
+    console.log('[code.js] setAnnotations called');
     if (!window.editor || !overlayEl) return;
 
     var parsedAnnotations = annotations;
@@ -480,7 +480,7 @@ window.setAnnotations = function (annotations) {
         try {
             parsedAnnotations = JSON.parse(annotations);
         } catch (e) {
-            console.error('[app.js] JSON.parse failed:', e);
+            console.error('[code.js] JSON.parse failed:', e);
             return;
         }
     }

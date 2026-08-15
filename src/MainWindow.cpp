@@ -22,6 +22,7 @@
 #include <QStackedLayout>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <QCoreApplication>
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowMinMaxButtonsHint);
@@ -252,8 +253,12 @@ void MainWindow::onSpeechCaptureFinished() {
         watcher->deleteLater();
 
         if (!transcribedText.trimmed().isEmpty() && m_chatWidget && m_chatWidget->backend()) {
-            emit m_chatWidget->backend()->appendUserMessage(transcribedText);
-            m_chatWidget->backend()->onUserSendMessage(transcribedText);
+            // Use QMetaObject::invokeMethod to ensure thread safety
+            QMetaObject::invokeMethod(m_chatWidget->backend(), [this, transcribedText]() {
+                if (m_chatWidget && m_chatWidget->backend()) {
+                    m_chatWidget->backend()->onUserSendMessage(transcribedText);
+                }
+            }, Qt::QueuedConnection);
         }
 
         m_wakeWordDetector->reset();

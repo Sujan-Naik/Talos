@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="qrc:///style.css">
     <link rel="stylesheet" href="qrc:///widgets/code/code.css">
     <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
@@ -48,7 +49,7 @@
         <div id="answer-content"></div>
     </div>
 </div>
-<script src="qrc:///widgets/code/app.js"></script>
+<script src="qrc:///widgets/code/code.js"></script>
 <script>
     document.getElementById('btn-format').addEventListener('click', () => {
         if (window.editor) window.editor.getAction('editor.action.formatDocument').run();
