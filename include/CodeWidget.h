@@ -1,26 +1,27 @@
 #pragma once
 
-#include <QWidget>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <memory>
 #include "EditorCommandExecutor.h"
 #include "LLMPromptBuilder.h"
-#include "ResponseProcessor.h"
 
-class QWebEngineView;
-class QTextEdit;
-class QPushButton;
-class QLabel;
+#include <QJsonArray>
+#include <QWidget>
+
+#include <memory>
+
 class QComboBox;
-class QSpinBox;
-class CodeBackend;
-class ApiStreamClient;
-class ResponseProcessor;
-struct StreamEvent;
-struct ParsedResponse;
+class QLineEdit;
+class QPushButton;
+class QTextEdit;
+class QLabel;
+class QNetworkAccessManager;
+class QNetworkReply;
+class QWebEngineView;
 
-class CodeWidget : public QWidget
+class CodeBackend;
+class ProjectModel;
+class CodingAgent;
+
+class CodeWidget final : public QWidget
 {
     Q_OBJECT
 
@@ -28,81 +29,164 @@ public:
     explicit CodeWidget(QWidget *parent = nullptr);
     ~CodeWidget() override = default;
 
-    void setEditorCode(const QString &code, const QString &language = QString());
+    void setEditorCode(
+        const QString &code,
+        const QString &language = QString()
+    );
+
     QString editorCode() const;
 
-    // Context management methods (for future use)
-    void setContextLevel(LlmPromptBuilder::CodeContextLevel level);
-    void setSelectionMode(LlmPromptBuilder::ContextSelectionMode mode);
-    void setRepoStructure(const QString &structure);
-    void setCurrentFile(const QString &filePath);
-    void setCurrentDirectory(const QString &dirPath);
-    void setMaxHistoryMessages(int maxMessages);
+    void setProjectDirectory(
+        const QString &path
+    );
+
+    QString projectDirectory() const;
+
+    void setContextLevel(
+        LLMPromptBuilder::CodeContextLevel level
+    );
+
+    void setSelectionMode(
+        LLMPromptBuilder::ContextSelectionMode mode
+    );
+
+    void setRepoStructure(
+        const QString &structure
+    );
+
+    void setCurrentFile(
+        const QString &filePath
+    );
+
+    void setMaxHistoryMessages(
+        int maxMessages
+    );
+
     int maxHistoryMessages() const;
 
-signals:
-    void messageSent(const QString &text);
-
 protected:
-    bool eventFilter(QObject *watched, QEvent *event) override;
-
-private slots:
-    void sendApiRequest();
-    void onStreamEvent(const StreamEvent &event);
-    void onRequestFinished();
-    void onRequestError(const QString &error);
-    void onContextLevelChanged(int index);
-    void onSelectionModeChanged(int index);
-    void onHistoryLengthChanged(int value);
+    bool eventFilter(
+        QObject *watched,
+        QEvent *event
+    ) override;
 
 private:
-    void appendMessageAsUser(const QString &text);
-    void appendMessageAsAi(const QString &text);
-    void showAnswer(const QString &text);
-    void showWarningBubble(const QString &message);
-    void setAnnotations(const QString &json);
     void setupUi();
     void setupConnections();
-    void setupContextControls();
-    void updateContextControlsVisibility();
-    void updateContextControlsState();
 
-    // UI components
-    QWebEngineView *m_webEngineView;
-    QTextEdit *m_inputBox;
-    QPushButton *m_sendButton;
-    QPushButton *m_clearButton;
-    QLabel *m_statusLabel;
+    void sendApiRequest(
+        LLMPromptBuilder::CodeContextLevel contextLevel
+    );
 
-    // Context controls (future use)
-    QComboBox *m_contextLevelCombo;
-    QComboBox *m_selectionModeCombo;
-    QSpinBox *m_historyLengthSpinBox;
-    QPushButton *m_contextSettingsButton;
-    QWidget *m_contextControlsPanel;
-    QLabel *m_contextLabel;
-    QLabel *m_historyLabel;
-    QLabel *m_modeLabel;
+    void startReview(
+        const QString &scope
+    );
 
-    // Backend components
-    CodeBackend *m_backend;
-    std::unique_ptr<ApiStreamClient> m_apiClient;
+    void loadProjectFile(
+        const QString &relativePath
+    );
+
+    void appendMessageAsUser(
+        const QString &text
+    );
+
+    void appendMessageAsAi(
+        const QString &text
+    );
+
+    void showAnswer(
+        const QString &text
+    );
+
+    void showWarningBubble(
+        const QString &message
+    );
+
+    void setAnnotations(
+        const QString &json
+    );
+
+    void updateProjectTreeInPage();
+
+    void applyAgentEdits(
+        const QString &edits
+    );
+
+    void chooseProjectDirectory();
+
+    void restoreLastProject();
+
+    // --------------------------------------------------------
+    // AI provider configuration
+    // --------------------------------------------------------
+
+    QString apiEndpoint() const;
+
+    QString selectedModel() const;
+
+    void setApiEndpoint(
+        const QString &endpoint
+    );
+
+    void setSelectedModel(
+        const QString &model
+    );
+
+    void refreshModelList();
+
+    void populateModels(
+        const QJsonArray &models
+    );
+
+    void saveAiSettings();
+
+    void restoreAiSettings();
+
+    QString normalizedEndpoint() const;
+
+private:
+    QWebEngineView *m_webEngineView = nullptr;
+
+    QTextEdit *m_inputBox = nullptr;
+
+    QPushButton *m_sendButton = nullptr;
+    QPushButton *m_clearButton = nullptr;
+    QPushButton *m_openProjectButton = nullptr;
+    QPushButton *m_refreshModelsButton = nullptr;
+
+    QLineEdit *m_endpointEdit = nullptr;
+
+    QComboBox *m_modelCombo = nullptr;
+
+    QLabel *m_statusLabel = nullptr;
+    QLabel *m_projectLabel = nullptr;
+    QLabel *m_modelStatusLabel = nullptr;
+
+    CodeBackend *m_backend = nullptr;
+
+    ProjectModel *m_projectModel = nullptr;
+
+    CodingAgent *m_agent = nullptr;
+
+    QNetworkAccessManager *m_modelNetworkManager = nullptr;
+
+    QNetworkReply *m_modelReply = nullptr;
+
     std::unique_ptr<EditorCommandExecutor> m_executor;
-    LlmPromptBuilder m_promptBuilder;
-    ResponseProcessor m_responseProcessor;
 
-    // State
     QString m_currentCode;
     QString m_currentFile;
-    QString m_currentDirectory;
     QString m_repoStructure;
-    QJsonArray m_conversationHistory;
-    QString m_aiStreamAccumulator;
-    bool m_isPageLoaded = false;
-    bool m_contextControlsVisible = false;
 
-    // Context configuration
-    LlmPromptBuilder::CodeContextLevel m_contextLevel = LlmPromptBuilder::CodeContextLevel::File;
-    LlmPromptBuilder::ContextSelectionMode m_selectionMode = LlmPromptBuilder::ContextSelectionMode::Manual;
+    bool m_isPageLoaded = false;
+
     int m_maxRecentMessages = 20;
+
+    LLMPromptBuilder::CodeContextLevel m_contextLevel =
+        LLMPromptBuilder::CodeContextLevel::File;
+
+    LLMPromptBuilder::ContextSelectionMode m_selectionMode =
+        LLMPromptBuilder::ContextSelectionMode::Automatic;
+
+    QJsonArray m_conversationHistory;
 };

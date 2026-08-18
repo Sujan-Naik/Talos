@@ -19,3 +19,13 @@ void CodeBackend::sendMessage(const QString &text)
 {
     onUserSendMessage(text);
 }
+
+void CodeBackend::requestReview(const QString &scope)
+{
+    emit reviewRequested(scope);
+}
+
+void CodeBackend::requestOpenFile(const QString &relativePath)
+{
+    emit openFileRequested(relativePath);
+}
