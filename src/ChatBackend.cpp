@@ -1,47 +1,82 @@
 #include "../include/ChatBackend.h"
 #include "../include/TtsManager.h"
 
-#include <QCoreApplication>
-#include <QDir>
 #include <QDebug>
 #include <QRegularExpression>
-#include <QStringList>
+
+#include <utility>
 
 ChatBackend::ChatBackend(QObject *parent)
     : QObject(parent)
-    , m_tts(nullptr)
-    , m_ttsInitialized(false)
-    , m_ttsEnabled(false)
-    , m_ttsProcessing(false)
+    , m_tts(new TtsManager(this))
 {
     setupTts();
 }
 
-ChatBackend::~ChatBackend()
-{
-    // TtsManager will be cleaned up automatically due to parent hierarchy
-}
+ChatBackend::~ChatBackend() = default;
 
 void ChatBackend::setupTts()
 {
-    if (m_tts) {
-        delete m_tts;
-        m_tts = nullptr;
-    }
+    if (!m_tts)
+        return;
 
-    m_tts = new TtsManager(this);
+    m_ttsVoice = m_tts->voice();
+    m_ttsVoices = m_tts->availableVoices();
 
-    connect(m_tts, &TtsManager::sentenceFinished,
-            this, &ChatBackend::handleTtsSentenceFinished);
-    connect(m_tts, &TtsManager::errorOccurred,
-            this, &ChatBackend::handleTtsError);
-    connect(m_tts, &TtsManager::serverReady,
-            this, &ChatBackend::onTtsServerReady);
+    connect(
+        m_tts,
+        &TtsManager::sentenceFinished,
+        this,
+        &ChatBackend::handleTtsSentenceFinished
+    );
 
-    bool ok = m_tts->initialize();  // autoStart = true
+    connect(
+        m_tts,
+        &TtsManager::errorOccurred,
+        this,
+        &ChatBackend::handleTtsError
+    );
+
+    connect(
+        m_tts,
+        &TtsManager::serverReady,
+        this,
+        &ChatBackend::onTtsServerReady
+    );
+
+    connect(
+        m_tts,
+        &TtsManager::voiceChanged,
+        this,
+        [this](const QString &voice)
+        {
+            if (voice == m_ttsVoice)
+                return;
+
+            m_ttsVoice = voice;
+            emit ttsVoiceChanged(m_ttsVoice);
+        }
+    );
+
+    connect(
+        m_tts,
+        &TtsManager::voicesChanged,
+        this,
+        &ChatBackend::handleTtsVoicesChanged
+    );
+
+    const bool ok = m_tts->initialize();
+
     if (!ok) {
-        qWarning() << "[ChatBackend] TTS initialisation failed (Docker not available or permission denied).";
-        emit ttsError("TTS initialisation failed – Docker not available.");
+        qWarning()
+            << "[ChatBackend] TTS initialisation failed."
+            << "Docker may be unavailable or permissions may be missing.";
+
+        emit ttsError(
+            QStringLiteral(
+                "TTS initialisation failed - Docker not available."
+            )
+        );
     }
 }
 
@@ -50,106 +85,212 @@ bool ChatBackend::isTtsReady() const
     return m_ttsInitialized && m_tts != nullptr;
 }
 
+bool ChatBackend::isTtsEnabled() const
+{
+    return m_ttsEnabled;
+}
+
+QString ChatBackend::ttsVoice() const
+{
+    return m_ttsVoice;
+}
+
+QStringList ChatBackend::ttsVoices() const
+{
+    return m_ttsVoices;
+}
+
+void ChatBackend::setTtsVoice(const QString &voice)
+{
+    if (!m_tts)
+        return;
+
+    const QString normalized = voice.trimmed();
+
+    if (normalized.isEmpty())
+        return;
+
+    m_tts->setVoice(normalized);
+
+    const QString actualVoice = m_tts->voice();
+
+    if (actualVoice == m_ttsVoice)
+        return;
+
+    m_ttsVoice = actualVoice;
+
+    emit ttsVoiceChanged(m_ttsVoice);
+}
+
 void ChatBackend::onTtsServerReady()
 {
-    qDebug() << "[ChatBackend] TTS server is ready.";
     m_ttsInitialized = true;
 
-    // Enable TTS by default (you can later toggle via UI)
-    m_ttsEnabled = true;
-    if (m_tts) {
-        m_tts->setEnabled(true);
-    }
+    qDebug()
+        << "[ChatBackend] TTS server ready.";
 
-    // --- TEST: enqueue a test sentence to verify audio ---
-    qDebug() << "[ChatBackend] Enqueuing test sentence...";
-    m_tts->enqueueSentence("Hello, this is a test of the TTS system.", 0);
-    // ------------------------------------------------------
+    if (!m_tts)
+        return;
 
-    // Flush any pending sentences that were queued before server ready
-    if (!m_pendingTtsSentences.isEmpty()) {
-        qDebug() << "[ChatBackend] Flushing" << m_pendingTtsSentences.size() << "pending sentences.";
-        for (const QString &sentence : m_pendingTtsSentences) {
-            enqueueTtsSentence(sentence);
+    m_tts->setVoice(m_ttsVoice);
+
+    /*
+     * Request the current voice catalog.
+     */
+    m_tts->refreshVoices();
+
+    emit ttsEnabledChanged(m_ttsEnabled);
+    emit ttsVoiceChanged(m_ttsVoice);
+    emit ttsVoicesChanged(m_ttsVoices);
+
+    /*
+     * Do not move pending sentences into the active queue unless
+     * TTS is actually enabled.
+     */
+    if (m_ttsEnabled &&
+        !m_pendingTtsSentences.isEmpty()) {
+
+        for (const QString &sentence :
+             std::as_const(m_pendingTtsSentences)) {
+
+            m_ttsQueue.append(sentence);
         }
+
         m_pendingTtsSentences.clear();
     }
 
-    // If TTS is enabled, start processing the queue
-    if (m_ttsEnabled) {
+    if (m_ttsEnabled)
         processTtsQueue();
-    }
 }
 
 void ChatBackend::speak(const QString &text)
 {
-    qDebug() << "[ChatBackend] speak() called with text length:" << text.length();
-    if (!m_ttsInitialized || !m_tts || !m_ttsEnabled || text.trimmed().isEmpty()) {
-        qDebug() << "[ChatBackend] speak aborted (not ready or disabled)";
+    const QString cleaned = cleanMarkdown(text);
+
+    if (cleaned.isEmpty())
+        return;
+
+    if (!m_ttsInitialized) {
+        m_pendingTtsSentences.append(cleaned);
         return;
     }
-    enqueueTtsSentence(text);
+
+    if (!m_ttsEnabled)
+        return;
+
+    enqueueTtsSentence(cleaned);
 }
 
 void ChatBackend::stopSpeech()
 {
-    qDebug() << "[ChatBackend] stopSpeech called";
     m_ttsBuffer.clear();
     m_ttsQueue.clear();
-    m_ttsProcessing = false;
     m_pendingTtsSentences.clear();
 
-    if (m_tts) {
+    m_ttsProcessing = false;
+
+    if (m_tts)
         m_tts->stopAndClear();
-    }
 }
 
 void ChatBackend::onTtsToggled(bool enabled)
 {
-    qDebug() << "[ChatBackend] TTS toggled to" << enabled;
+    if (m_ttsEnabled == enabled) {
+        if (enabled && m_ttsInitialized)
+            processTtsQueue();
+
+        return;
+    }
+
     m_ttsEnabled = enabled;
 
-    if (m_tts) {
-        m_tts->setEnabled(enabled);
-    }
+    emit ttsEnabledChanged(m_ttsEnabled);
+
+    if (!m_tts)
+        return;
 
     if (!enabled) {
-        stopSpeech();
-    } else if (m_ttsInitialized) {
-        processTtsQueue();
+        m_tts->setEnabled(false);
+
+        m_ttsBuffer.clear();
+        m_ttsQueue.clear();
+        m_pendingTtsSentences.clear();
+        m_ttsProcessing = false;
+
+        return;
     }
+
+    m_tts->setEnabled(true);
+
+    if (!m_pendingTtsSentences.isEmpty()) {
+        for (const QString &sentence :
+             std::as_const(m_pendingTtsSentences)) {
+
+            m_ttsQueue.append(sentence);
+        }
+
+        m_pendingTtsSentences.clear();
+    }
+
+    if (m_ttsInitialized)
+        processTtsQueue();
+}
+
+void ChatBackend::previewTtsVoice()
+{
+    if (!m_tts ||
+        !m_ttsInitialized ||
+        !m_ttsEnabled) {
+        return;
+    }
+
+    enqueueTtsSentence(
+        QStringLiteral(
+            "This is a preview of the selected voice."
+        )
+    );
 }
 
 void ChatBackend::onUserSendMessage(const QString &message)
 {
-    qDebug() << "[ChatBackend] onUserSendMessage";
     stopSpeech();
 
-    if (!message.trimmed().isEmpty()) {
-        emit messageReceived(message);
-    }
+    const QString cleaned = message.trimmed();
+
+    if (cleaned.isEmpty())
+        return;
+
+    emit messageReceived(cleaned);
 }
 
 void ChatBackend::handleAiStreamDelta(const QString &deltaText)
 {
-    qDebug() << "[ChatBackend] handleAiStreamDelta received, length:" << deltaText.length();
-    if (!m_ttsEnabled || !m_ttsInitialized || !m_tts || deltaText.isEmpty()) {
-        qDebug() << "[ChatBackend] handleAiStreamDelta aborted (not ready or disabled)";
+    if (!m_ttsEnabled ||
+        !m_ttsInitialized ||
+        !m_tts ||
+        deltaText.isEmpty()) {
         return;
     }
 
     m_ttsBuffer += deltaText;
 
-    static const QRegularExpression codeBlockRegex(QStringLiteral("```[\\s\\S]*?```"));
-    m_ttsBuffer.replace(codeBlockRegex, QStringLiteral(" Code snippet omitted. "));
+    static const QRegularExpression codeBlockRegex(
+        QStringLiteral("```[\\s\\S]*?```")
+    );
+
+    m_ttsBuffer.replace(
+        codeBlockRegex,
+        QStringLiteral(" Code snippet omitted. ")
+    );
 
     splitAndEnqueueSentences();
 }
 
 void ChatBackend::handleAiStreamFinished()
 {
-    qDebug() << "[ChatBackend] handleAiStreamFinished";
-    if (!m_ttsEnabled || !m_ttsInitialized || !m_tts) {
+    if (!m_ttsEnabled ||
+        !m_ttsInitialized ||
+        !m_tts) {
         return;
     }
 
@@ -158,137 +299,308 @@ void ChatBackend::handleAiStreamFinished()
 
 void ChatBackend::splitAndEnqueueSentences()
 {
-    static const QRegularExpression sentenceRegex(QStringLiteral("([.!?])(?:\\s+|$)"));
+    /*
+     * Split when sentence-ending punctuation is followed by
+     * whitespace.
+     *
+     * Examples:
+     *   "Hello. How are you?"
+     *   "He said, \"Hello!\" Then left."
+     *
+     * The final fragment is intentionally left in m_ttsBuffer
+     * until handleAiStreamFinished() calls flushTtsBuffer().
+     */
+    static const QRegularExpression sentenceRegex(
+        QStringLiteral(
+            "([.!?…]+[\"'’”»)\\]]*)(?=\\s+)"
+        )
+    );
 
-    QString buffer = m_ttsBuffer;
-    QRegularExpressionMatchIterator it = sentenceRegex.globalMatch(buffer);
+    if (!sentenceRegex.isValid()) {
+        qWarning()
+            << "[ChatBackend] Invalid sentence regex:"
+            << sentenceRegex.errorString();
 
-    int lastIndex = 0;
-    QStringList sentences;
-
-    while (it.hasNext()) {
-        QRegularExpressionMatch match = it.next();
-        int splitIndex = match.capturedEnd(1);
-
-        sentences.append(buffer.mid(lastIndex, splitIndex - lastIndex));
-        lastIndex = splitIndex;
-    }
-
-    if (!sentences.isEmpty()) {
-        qDebug() << "[ChatBackend] splitAndEnqueue: found" << sentences.size() << "sentences.";
-        for (const QString &raw : sentences) {
-            const QString cleaned = cleanMarkdown(raw);
-            if (!cleaned.isEmpty()) {
-                enqueueTtsSentence(cleaned);
-            }
-        }
-
-        m_ttsBuffer = buffer.mid(lastIndex);
-    }
-}
-
-void ChatBackend::enqueueTtsSentence(const QString &text)
-{
-    const QString cleanedText = cleanMarkdown(text);
-    if (cleanedText.isEmpty()) {
         return;
     }
 
-    qDebug() << "[ChatBackend] enqueueTtsSentence: text='" << cleanedText.left(50) << "...'";
+    const QString buffer = m_ttsBuffer;
 
-    // If TTS is not yet initialised, store in pending list
+    QRegularExpressionMatchIterator iterator =
+        sentenceRegex.globalMatch(buffer);
+
+    int lastIndex = 0;
+
+    QStringList sentences;
+
+    while (iterator.hasNext()) {
+        const QRegularExpressionMatch match =
+            iterator.next();
+
+        if (!match.hasMatch())
+            continue;
+
+        const int splitIndex =
+            match.capturedEnd(1);
+
+        if (splitIndex <= lastIndex)
+            continue;
+
+        sentences.append(
+            buffer.mid(
+                lastIndex,
+                splitIndex - lastIndex
+            )
+        );
+
+        lastIndex = splitIndex;
+    }
+
+    if (sentences.isEmpty())
+        return;
+
+    for (const QString &raw : std::as_const(sentences)) {
+        const QString cleaned =
+            cleanMarkdown(raw);
+
+        if (!cleaned.isEmpty())
+            enqueueTtsSentence(cleaned);
+    }
+
+    m_ttsBuffer =
+        buffer.mid(lastIndex);
+}
+void ChatBackend::enqueueTtsSentence(const QString &text)
+{
+    const QString cleanedText =
+        cleanMarkdown(text);
+
+    if (cleanedText.isEmpty())
+        return;
+
     if (!m_ttsInitialized) {
-        qDebug() << "[ChatBackend] TTS not initialized, storing in pending.";
         m_pendingTtsSentences.append(cleanedText);
         return;
     }
 
-    m_ttsQueue.append(cleanedText);
-    qDebug() << "[ChatBackend] TTS queue size:" << m_ttsQueue.size();
+    if (!m_ttsEnabled)
+        return;
 
-    if (!m_ttsProcessing) {
+    m_ttsQueue.append(cleanedText);
+
+    if (!m_ttsProcessing)
         processTtsQueue();
-    }
 }
 
 void ChatBackend::processTtsQueue()
 {
-    qDebug() << "[ChatBackend] processTtsQueue called, processing=" << m_ttsProcessing
-             << " queueSize=" << m_ttsQueue.size()
-             << " enabled=" << m_ttsEnabled;
-    if (m_ttsProcessing || m_ttsQueue.isEmpty() || !m_tts || !m_ttsEnabled) {
+    if (m_ttsProcessing)
+        return;
+
+    if (m_ttsQueue.isEmpty())
+        return;
+
+    if (!m_tts)
+        return;
+
+    if (!m_ttsInitialized)
+        return;
+
+    if (!m_ttsEnabled)
+        return;
+
+    const QString sentence =
+        m_ttsQueue.takeFirst();
+
+    if (sentence.trimmed().isEmpty()) {
+        processTtsQueue();
         return;
     }
 
     m_ttsProcessing = true;
-    const QString sentence = m_ttsQueue.takeFirst();
-    qDebug() << "[ChatBackend] Sending sentence to TTS: '" << sentence.left(50) << "...'";
-    m_tts->enqueueSentence(sentence, 0);
+
+    m_tts->enqueueSentence(
+        sentence,
+        0
+    );
 }
 
 void ChatBackend::handleTtsSentenceFinished()
 {
-    qDebug() << "[ChatBackend] handleTtsSentenceFinished";
     m_ttsProcessing = false;
+
+    if (!m_ttsEnabled)
+        return;
+
     processTtsQueue();
 }
 
-void ChatBackend::handleTtsError(const QString &error)
+void ChatBackend::handleTtsError(
+    const QString &error)
 {
-    qWarning() << "[ChatBackend] TTS error:" << error;
+    qWarning()
+        << "[ChatBackend] TTS error:"
+        << error;
+
     emit ttsError(error);
 
     m_ttsProcessing = false;
+
+    if (!m_ttsEnabled)
+        return;
+
     processTtsQueue();
+}
+
+void ChatBackend::handleTtsVoicesChanged(
+    const QStringList &voices)
+{
+    if (voices.isEmpty())
+        return;
+
+    m_ttsVoices = voices;
+
+    emit ttsVoicesChanged(m_ttsVoices);
+
+    /*
+     * A blend such as:
+     *
+     *     af_sky,af_bella
+     *
+     * is valid but will not appear as an individual catalog entry.
+     */
+    if (m_ttsVoice.contains(QLatin1Char(',')))
+        return;
+
+    if (m_ttsVoices.contains(m_ttsVoice))
+        return;
+
+    if (!m_tts)
+        return;
+
+    m_tts->setVoice(
+        m_ttsVoices.first()
+    );
+
+    const QString actualVoice =
+        m_tts->voice();
+
+    if (actualVoice == m_ttsVoice)
+        return;
+
+    m_ttsVoice = actualVoice;
+
+    emit ttsVoiceChanged(
+        m_ttsVoice
+    );
 }
 
 void ChatBackend::flushTtsBuffer()
 {
-    if (!m_ttsEnabled || !m_ttsInitialized || !m_tts) {
+    if (!m_ttsEnabled ||
+        !m_ttsInitialized ||
+        !m_tts) {
         return;
     }
 
     QString remaining = m_ttsBuffer;
-    static const QRegularExpression unclosedCodeBlock(QStringLiteral("```[\\s\\S]*$"));
-    remaining.replace(unclosedCodeBlock, QStringLiteral(" Code snippet omitted. "));
 
-    const QString cleaned = cleanMarkdown(remaining);
-    if (!cleaned.isEmpty()) {
-        qDebug() << "[ChatBackend] flushTtsBuffer: enqueuing remaining text";
+    static const QRegularExpression unclosedCodeBlock(
+        QStringLiteral(
+            "```[\\s\\S]*$"
+        )
+    );
+
+    remaining.replace(
+        unclosedCodeBlock,
+        QStringLiteral(
+            " Code snippet omitted. "
+        )
+    );
+
+    const QString cleaned =
+        cleanMarkdown(remaining);
+
+    if (!cleaned.isEmpty())
         enqueueTtsSentence(cleaned);
-    }
 
     m_ttsBuffer.clear();
 }
 
-QString ChatBackend::cleanMarkdown(const QString &text) const
+QString ChatBackend::cleanMarkdown(
+    const QString &text) const
 {
     QString result = text;
 
-    static const QRegularExpression codeBlockRegex(QStringLiteral("```[\\s\\S]*?```"));
-    result.replace(codeBlockRegex, QStringLiteral(" Code snippet omitted. "));
+    static const QRegularExpression codeBlockRegex(
+        QStringLiteral(
+            "```[\\s\\S]*?```"
+        )
+    );
 
-    static const QRegularExpression inlineCodeRegex(QStringLiteral("`([^`]+)`"));
-    QRegularExpressionMatchIterator it = inlineCodeRegex.globalMatch(result);
+    result.replace(
+        codeBlockRegex,
+        QStringLiteral(
+            " Code snippet omitted. "
+        )
+    );
+
+    static const QRegularExpression inlineCodeRegex(
+        QStringLiteral(
+            "`([^`]+)`"
+        )
+    );
+
+    QRegularExpressionMatchIterator iterator =
+        inlineCodeRegex.globalMatch(result);
 
     QString withoutInlineCode;
+
     int lastIndex = 0;
 
-    while (it.hasNext()) {
-        QRegularExpressionMatch match = it.next();
-        withoutInlineCode += result.mid(lastIndex, match.capturedStart() - lastIndex);
-        withoutInlineCode += match.captured(1);
-        lastIndex = match.capturedEnd();
+    while (iterator.hasNext()) {
+        const QRegularExpressionMatch match =
+            iterator.next();
+
+        withoutInlineCode +=
+            result.mid(
+                lastIndex,
+                match.capturedStart() - lastIndex
+            );
+
+        withoutInlineCode +=
+            match.captured(1);
+
+        lastIndex =
+            match.capturedEnd();
     }
 
-    withoutInlineCode += result.mid(lastIndex);
+    withoutInlineCode +=
+        result.mid(lastIndex);
+
     result = withoutInlineCode;
 
-    static const QRegularExpression markdownCharsRegex(QStringLiteral("[*_#~\\[\\]]"));
-    result.replace(markdownCharsRegex, QString());
+    static const QRegularExpression markdownCharsRegex(
+        QStringLiteral(
+            R"([*_#~\[\]])"
+        )
+    );
 
-    static const QRegularExpression whitespaceRegex(QStringLiteral("\\s+"));
-    result.replace(whitespaceRegex, QStringLiteral(" "));
+    result.replace(
+        markdownCharsRegex,
+        QString()
+    );
+
+    static const QRegularExpression whitespaceRegex(
+        QStringLiteral(
+            R"(\s+)"
+        )
+    );
+
+    result.replace(
+        whitespaceRegex,
+        QStringLiteral(" ")
+    );
 
     return result.trimmed();
 }

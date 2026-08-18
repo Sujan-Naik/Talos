@@ -1,189 +1,864 @@
 #include "../include/TtsManager.h"
+
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMediaDevices>
-#include <QRegularExpression>
-#include <QThread>
-#include <QTimer>
 #include <QNetworkProxy>
+#include <QNetworkRequest>
+#include <QRegularExpression>
 
 TtsManager::TtsManager(QObject *parent)
     : QObject(parent)
     , m_networkManager(new QNetworkAccessManager(this))
-    , m_currentReply(nullptr)
     , m_audioBuffer(this)
-    , m_enabled(true)
-    , m_initialized(false)
-    , m_isPlaying(false)
     , m_dockerProcess(nullptr)
-    , m_containerStarted(false)
     , m_healthCheckTimer(new QTimer(this))
-    , m_healthAttempts(0)
 {
     m_networkManager->setProxy(QNetworkProxy::NoProxy);
 
-    // Connect manager's finished signal to our handler
-    connect(m_networkManager, &QNetworkAccessManager::finished,
-            this, &TtsManager::onTtsReplyFinished);
-
-    // Extra lambda to confirm the manager signal is emitted
-    connect(m_networkManager, &QNetworkAccessManager::finished,
-            this, [this](QNetworkReply* reply) {
-                qDebug() << "[TTS] Manager finished signal received (lambda).";
-                // We don't process here; the slot will handle it.
-            });
+    m_availableVoices = defaultVoices();
 
     m_healthCheckTimer->setInterval(2000);
-    connect(m_healthCheckTimer, &QTimer::timeout, this, &TtsManager::checkServerHealth);
+
+    connect(
+        m_healthCheckTimer,
+        &QTimer::timeout,
+        this,
+        &TtsManager::checkServerHealth
+    );
 }
 
 TtsManager::~TtsManager()
 {
-    setEnabled(false);
     stopAndClear();
+
+    if (m_voiceReply) {
+        m_voiceReply->abort();
+        m_voiceReply->deleteLater();
+        m_voiceReply = nullptr;
+    }
+
     if (m_currentReply) {
         m_currentReply->abort();
         m_currentReply->deleteLater();
         m_currentReply = nullptr;
     }
+
     cleanupAudioSink();
+
     stopDockerContainer();
 }
 
-bool TtsManager::initialize(const QString &serverUrl, bool autoStart)
+QStringList TtsManager::defaultVoices()
+{
+    return QStringList{
+        QStringLiteral("af_alloy"),
+        QStringLiteral("af_aoede"),
+        QStringLiteral("af_bella"),
+        QStringLiteral("af_jessica"),
+        QStringLiteral("af_kore"),
+        QStringLiteral("af_nicole"),
+        QStringLiteral("af_nova"),
+        QStringLiteral("af_river"),
+        QStringLiteral("af_sarah"),
+        QStringLiteral("af_sky"),
+
+        QStringLiteral("am_adam"),
+        QStringLiteral("am_echo"),
+        QStringLiteral("am_eric"),
+        QStringLiteral("am_fenrir"),
+        QStringLiteral("am_liam"),
+        QStringLiteral("am_michael"),
+        QStringLiteral("am_onyx"),
+        QStringLiteral("am_puck"),
+        QStringLiteral("am_santa"),
+
+        QStringLiteral("bf_alice"),
+        QStringLiteral("bf_emma"),
+        QStringLiteral("bf_isabella"),
+        QStringLiteral("bf_lily"),
+
+        QStringLiteral("bm_daniel"),
+        QStringLiteral("bm_fable"),
+        QStringLiteral("bm_george"),
+        QStringLiteral("bm_lewis")
+    };
+}
+
+QStringList TtsManager::availableVoices() const
+{
+    return m_availableVoices;
+}
+
+void TtsManager::refreshVoices()
+{
+    if (m_availableVoices.isEmpty())
+        m_availableVoices = defaultVoices();
+
+    emit voicesChanged(m_availableVoices);
+}
+
+bool TtsManager::initialize(
+    const QString &serverUrl,
+    bool autoStart)
 {
     if (m_initialized)
         return true;
 
     if (autoStart) {
         if (!checkDockerAvailable()) {
-            emit errorOccurred("Docker is not available or user lacks permissions.");
+            emit errorOccurred(
+                QStringLiteral(
+                    "Docker is not available or user lacks permissions."
+                )
+            );
+
             return false;
         }
+
         startDockerContainer();
+
         m_initialized = true;
-        return true;
-    } else {
-        if (serverUrl.isEmpty())
-            return false;
-        m_serverUrl = QUrl(serverUrl);
-        if (!m_serverUrl.isValid()) {
-            qWarning() << "[TTS] Invalid server URL:" << serverUrl;
-            return false;
-        }
-        m_initialized = true;
+
         return true;
     }
+
+    if (serverUrl.isEmpty())
+        return false;
+
+    m_serverUrl = QUrl(serverUrl);
+
+    if (!m_serverUrl.isValid()) {
+        qWarning()
+            << "[TTS] Invalid server URL:"
+            << serverUrl;
+
+        return false;
+    }
+
+    m_initialized = true;
+
+    return true;
+}
+
+void TtsManager::setEnabled(bool enabled)
+{
+    if (m_enabled == enabled)
+        return;
+
+    m_enabled = enabled;
+
+    qDebug()
+        << "[TTS] setEnabled ="
+        << enabled;
+
+    if (!enabled)
+        stopAndClear();
+}
+
+void TtsManager::setVoice(const QString &voice)
+{
+    QString normalized = voice.trimmed();
+
+    if (normalized.isEmpty())
+        normalized = QStringLiteral("af_bella");
+
+    if (m_voice == normalized)
+        return;
+
+    m_voice = normalized;
+
+    qDebug()
+        << "[TTS] Voice changed to:"
+        << m_voice;
+
+    emit voiceChanged(m_voice);
+}
+
+QString TtsManager::voice() const
+{
+    return m_voice;
+}
+
+void TtsManager::enqueueSentence(
+    const QString &sentence,
+    int speakerId)
+{
+    const QString cleaned = sentence.trimmed();
+
+    if (!m_enabled ||
+        !m_initialized ||
+        cleaned.isEmpty()) {
+        return;
+    }
+
+    if (m_synthesisInProgress) {
+        qWarning()
+            << "[TTS] Synthesis already in progress;"
+            << "ignoring overlapping sentence.";
+
+        return;
+    }
+
+    m_synthesisInProgress = true;
+
+    requestSynthesis(
+        cleaned,
+        speakerId,
+        m_generation
+    );
+}
+
+void TtsManager::requestSynthesis(
+    const QString &text,
+    int speakerId,
+    quint64 generation)
+{
+    if (!m_enabled ||
+        !m_initialized ||
+        generation != m_generation) {
+
+        m_synthesisInProgress = false;
+        return;
+    }
+
+    const QString url =
+        m_serverUrl.toString()
+        + QStringLiteral("/v1/audio/speech");
+
+    qDebug()
+        << "[TTS] Synthesizing voice="
+        << m_voice
+        << "text length="
+        << text.length()
+        << "generation="
+        << generation;
+
+    QJsonObject payload;
+
+    payload["model"] = QStringLiteral("kokoro");
+    payload["input"] = text;
+    payload["voice"] = m_voice;
+    payload["response_format"] = QStringLiteral("pcm");
+
+    const QByteArray body =
+        QJsonDocument(payload).toJson(
+            QJsonDocument::Compact
+        );
+
+    // IMPORTANT: braces avoid the C++ vexing parse.
+    QNetworkRequest request{QUrl(url)};
+
+    request.setHeader(
+        QNetworkRequest::ContentTypeHeader,
+        QStringLiteral("application/json")
+    );
+
+    request.setHeader(
+        QNetworkRequest::UserAgentHeader,
+        QStringLiteral("TalosApp/1.0")
+    );
+
+    QNetworkReply *reply =
+        m_networkManager->post(
+            request,
+            body
+        );
+
+    m_currentReply = reply;
+
+    connect(
+        reply,
+        &QNetworkReply::finished,
+        this,
+        [this, reply, generation, speakerId]() {
+            processReply(
+                reply,
+                generation,
+                speakerId
+            );
+        }
+    );
+}
+
+void TtsManager::processReply(
+    QNetworkReply *reply,
+    quint64 generation,
+    int speakerId)
+{
+    if (!reply)
+        return;
+
+    if (m_currentReply == reply)
+        m_currentReply = nullptr;
+
+    if (generation != m_generation) {
+        qDebug()
+            << "[TTS] Ignoring stale synthesis reply."
+            << "reply generation="
+            << generation
+            << "current generation="
+            << m_generation;
+
+        m_synthesisInProgress = false;
+
+        reply->deleteLater();
+
+        return;
+    }
+
+    if (!m_enabled) {
+        m_synthesisInProgress = false;
+
+        reply->deleteLater();
+
+        return;
+    }
+
+    if (reply->error() != QNetworkReply::NoError) {
+        const QString error =
+            reply->errorString();
+
+        m_synthesisInProgress = false;
+
+        reply->deleteLater();
+
+        emit errorOccurred(
+            QStringLiteral(
+                "TTS request failed: %1"
+            ).arg(error)
+        );
+
+        return;
+    }
+
+    const int status =
+        reply->attribute(
+            QNetworkRequest::HttpStatusCodeAttribute
+        ).toInt();
+
+    if (status != 200) {
+        const QByteArray response =
+            reply->readAll();
+
+        QString error =
+            QStringLiteral(
+                "TTS server returned HTTP %1"
+            ).arg(status);
+
+        if (!response.isEmpty()) {
+            error +=
+                QStringLiteral(": ")
+                + QString::fromUtf8(response);
+        }
+
+        m_synthesisInProgress = false;
+
+        reply->deleteLater();
+
+        emit errorOccurred(error);
+
+        return;
+    }
+
+    const QByteArray audio =
+        reply->readAll();
+
+    if (audio.isEmpty()) {
+        m_synthesisInProgress = false;
+
+        reply->deleteLater();
+
+        emit errorOccurred(
+            QStringLiteral(
+                "Empty audio data from TTS server"
+            )
+        );
+
+        return;
+    }
+
+    AudioChunk chunk;
+
+    chunk.data = audio;
+    chunk.sampleRate = 24000;
+    chunk.speakerId = speakerId;
+    chunk.timestamp =
+        QDateTime::currentMSecsSinceEpoch();
+
+    {
+        QMutexLocker locker(&m_queueMutex);
+
+        m_audioQueue.enqueue(chunk);
+    }
+
+    m_synthesisInProgress = false;
+
+    emit sentenceQueued(speakerId);
+
+    reply->deleteLater();
+
+    if (!m_isPlaying)
+        playNextInQueue();
+}
+
+void TtsManager::playNextInQueue()
+{
+    if (!m_enabled)
+        return;
+
+    if (m_isPlaying)
+        return;
+
+    AudioChunk chunk;
+
+    {
+        QMutexLocker locker(&m_queueMutex);
+
+        if (m_audioQueue.isEmpty())
+            return;
+
+        chunk = m_audioQueue.dequeue();
+    }
+
+    const QAudioDevice device =
+        QMediaDevices::defaultAudioOutput();
+
+    if (device.isNull()) {
+        emit errorOccurred(
+            QStringLiteral(
+                "No audio output device available."
+            )
+        );
+
+        return;
+    }
+
+    QAudioFormat format;
+
+    format.setSampleRate(chunk.sampleRate);
+    format.setChannelCount(1);
+    format.setSampleFormat(QAudioFormat::Int16);
+
+    cleanupAudioSink();
+
+    {
+        QMutexLocker locker(&m_audioBufferMutex);
+
+        if (m_audioBuffer.isOpen())
+            m_audioBuffer.close();
+
+        m_audioBuffer.setData(chunk.data);
+
+        if (!m_audioBuffer.open(QIODevice::ReadOnly)) {
+            emit errorOccurred(
+                QStringLiteral(
+                    "Failed to open TTS audio buffer."
+                )
+            );
+
+            return;
+        }
+    }
+
+    m_audioSink =
+        std::make_unique<QAudioSink>(
+            device,
+            format
+        );
+
+    connect(
+        m_audioSink.get(),
+        &QAudioSink::stateChanged,
+        this,
+        &TtsManager::onAudioStateChanged,
+        Qt::QueuedConnection
+    );
+
+    m_isPlaying = true;
+    m_playbackCompletionPending = true;
+
+    qDebug()
+        << "[TTS] Playing chunk:"
+        << chunk.data.size()
+        << "bytes";
+
+    m_audioSink->start(&m_audioBuffer);
+}
+
+void TtsManager::onAudioStateChanged(
+    QAudio::State state)
+{
+    qDebug()
+        << "[TTS] Audio state changed:"
+        << state;
+
+    if (!m_audioSink)
+        return;
+
+    if (state == QAudio::IdleState) {
+        if (!m_playbackCompletionPending)
+            return;
+
+        finishCurrentPlayback();
+
+        return;
+    }
+
+    if (state == QAudio::StoppedState) {
+        if (m_audioSink->error() != QAudio::NoError) {
+            const QAudio::Error error =
+                m_audioSink->error();
+
+            qWarning()
+                << "[TTS] Audio error:"
+                << error;
+
+            m_playbackCompletionPending = false;
+            m_isPlaying = false;
+
+            cleanupAudioSink();
+
+            {
+                QMutexLocker locker(
+                    &m_audioBufferMutex
+                );
+
+                if (m_audioBuffer.isOpen())
+                    m_audioBuffer.close();
+            }
+
+            emit errorOccurred(
+                QStringLiteral(
+                    "Audio playback error."
+                )
+            );
+        }
+    }
+}
+
+void TtsManager::finishCurrentPlayback()
+{
+    if (!m_playbackCompletionPending)
+        return;
+
+    m_playbackCompletionPending = false;
+
+    /*
+     * Stop the sink before closing its source.
+     */
+    if (m_audioSink)
+        m_audioSink->stop();
+
+    cleanupAudioSink();
+
+    {
+        QMutexLocker locker(
+            &m_audioBufferMutex
+        );
+
+        if (m_audioBuffer.isOpen())
+            m_audioBuffer.close();
+
+        m_audioBuffer.setData(QByteArray());
+    }
+
+    m_isPlaying = false;
+
+    emit sentenceFinished();
+}
+
+void TtsManager::cleanupAudioSink()
+{
+    if (!m_audioSink)
+        return;
+
+    m_audioSink->disconnect();
+    m_audioSink->stop();
+    m_audioSink.reset();
+}
+
+void TtsManager::stopAndClear()
+{
+    ++m_generation;
+
+    qDebug()
+        << "[TTS] stopAndClear:"
+        << "generation="
+        << m_generation;
+
+    m_synthesisInProgress = false;
+
+    if (m_currentReply) {
+        QNetworkReply *reply =
+            m_currentReply;
+
+        m_currentReply = nullptr;
+
+        reply->abort();
+        reply->deleteLater();
+    }
+
+    {
+        QMutexLocker locker(&m_queueMutex);
+
+        m_audioQueue.clear();
+    }
+
+    m_playbackCompletionPending = false;
+
+    cleanupAudioSink();
+
+    {
+        QMutexLocker locker(
+            &m_audioBufferMutex
+        );
+
+        if (m_audioBuffer.isOpen())
+            m_audioBuffer.close();
+
+        m_audioBuffer.setData(QByteArray());
+    }
+
+    m_isPlaying = false;
+}
+
+int TtsManager::queueSize() const
+{
+    QMutexLocker locker(&m_queueMutex);
+
+    return m_audioQueue.size();
 }
 
 bool TtsManager::checkDockerAvailable()
 {
     QProcess check;
-    check.start("docker", QStringList() << "info");
+
+    check.start(
+        QStringLiteral("docker"),
+        QStringList() << QStringLiteral("info")
+    );
+
     check.waitForFinished(2000);
+
     if (check.exitCode() != 0) {
-        qWarning() << "[TTS] Docker not available or not running.";
+        qWarning()
+            << "[TTS] Docker not available.";
+
         return false;
     }
+
     return true;
 }
 
 void TtsManager::startDockerContainer()
 {
     QProcess check;
-    QStringList args;
-    args << "ps" << "--filter" << "ancestor=" + QString::fromUtf8(DOCKER_IMAGE)
-         << "--format" << "{{.ID}}";
-    check.start("docker", args);
+
+    check.start(
+        QStringLiteral("docker"),
+        QStringList()
+            << QStringLiteral("ps")
+            << QStringLiteral("--filter")
+            << (
+                QStringLiteral("ancestor=")
+                + QString::fromUtf8(DOCKER_IMAGE)
+            )
+            << QStringLiteral("--format")
+            << QStringLiteral("{{.ID}}")
+    );
+
     check.waitForFinished(2000);
-    QString output = QString::fromUtf8(check.readAllStandardOutput()).trimmed();
+
+    const QString output =
+        QString::fromUtf8(
+            check.readAllStandardOutput()
+        ).trimmed();
+
     if (!output.isEmpty()) {
         m_containerId = output;
         m_containerStarted = true;
-        qDebug() << "[TTS] Docker container already running with ID:" << m_containerId;
-        m_serverUrl = QUrl(QString("http://127.0.0.1:%1").arg(HOST_PORT));
+
+        m_serverUrl =
+            QUrl(
+                QStringLiteral(
+                    "http://127.0.0.1:%1"
+                ).arg(HOST_PORT)
+            );
+
         m_healthAttempts = 0;
         m_healthCheckTimer->start();
+
         return;
     }
 
     QProcess inspect;
-    inspect.start("docker", QStringList() << "image" << "inspect" << QString::fromUtf8(DOCKER_IMAGE));
+
+    inspect.start(
+        QStringLiteral("docker"),
+        QStringList()
+            << QStringLiteral("image")
+            << QStringLiteral("inspect")
+            << QString::fromUtf8(DOCKER_IMAGE)
+    );
+
     inspect.waitForFinished(2000);
-    if (inspect.exitCode() != 0) {
+
+    if (inspect.exitCode() != 0)
         pullDockerImage();
-    } else {
+    else
         runDockerContainer();
-    }
 }
 
 void TtsManager::pullDockerImage()
 {
-    qDebug() << "[TTS] Pulling Docker image:" << DOCKER_IMAGE;
-    if (m_dockerProcess) {
+    if (m_dockerProcess)
         m_dockerProcess->deleteLater();
-    }
-    m_dockerProcess = new QProcess(this);
-    connect(m_dockerProcess, &QProcess::finished, this, &TtsManager::onDockerPullFinished);
-    connect(m_dockerProcess, &QProcess::readyReadStandardOutput, this, &TtsManager::onDockerOutputReady);
-    connect(m_dockerProcess, &QProcess::readyReadStandardError, this, &TtsManager::onDockerErrorReady);
 
-    m_dockerProcess->start("docker", QStringList() << "pull" << QString::fromUtf8(DOCKER_IMAGE));
+    m_dockerProcess =
+        new QProcess(this);
+
+    connect(
+        m_dockerProcess,
+        &QProcess::finished,
+        this,
+        &TtsManager::onDockerPullFinished
+    );
+
+    connect(
+        m_dockerProcess,
+        &QProcess::readyReadStandardOutput,
+        this,
+        &TtsManager::onDockerOutputReady
+    );
+
+    connect(
+        m_dockerProcess,
+        &QProcess::readyReadStandardError,
+        this,
+        &TtsManager::onDockerErrorReady
+    );
+
+    m_dockerProcess->start(
+        QStringLiteral("docker"),
+        QStringList()
+            << QStringLiteral("pull")
+            << QString::fromUtf8(DOCKER_IMAGE)
+    );
 }
 
-void TtsManager::onDockerPullFinished(int exitCode, QProcess::ExitStatus status)
+void TtsManager::onDockerPullFinished(
+    int exitCode,
+    QProcess::ExitStatus status)
 {
-    if (exitCode != 0 || status != QProcess::NormalExit) {
-        emit errorOccurred("Failed to pull Docker image. Check network and permissions.");
+    if (exitCode != 0 ||
+        status != QProcess::NormalExit) {
+        emit errorOccurred(
+            QStringLiteral(
+                "Failed to pull Docker image."
+            )
+        );
+
         return;
     }
-    qDebug() << "[TTS] Docker image pulled successfully.";
+
     runDockerContainer();
 }
 
 void TtsManager::runDockerContainer()
 {
-    qDebug() << "[TTS] Starting Docker container...";
-    if (m_dockerProcess) {
+    if (m_dockerProcess)
         m_dockerProcess->deleteLater();
-    }
-    m_dockerProcess = new QProcess(this);
-    connect(m_dockerProcess, &QProcess::finished, this, &TtsManager::onDockerRunFinished);
-    connect(m_dockerProcess, &QProcess::readyReadStandardOutput, this, &TtsManager::onDockerOutputReady);
-    connect(m_dockerProcess, &QProcess::readyReadStandardError, this, &TtsManager::onDockerErrorReady);
+
+    m_dockerProcess =
+        new QProcess(this);
+
+    connect(
+        m_dockerProcess,
+        &QProcess::finished,
+        this,
+        &TtsManager::onDockerRunFinished
+    );
+
+    connect(
+        m_dockerProcess,
+        &QProcess::readyReadStandardOutput,
+        this,
+        &TtsManager::onDockerOutputReady
+    );
+
+    connect(
+        m_dockerProcess,
+        &QProcess::readyReadStandardError,
+        this,
+        &TtsManager::onDockerErrorReady
+    );
 
     QStringList args;
-    args << "run" << "--rm" << "-d"
-         << "--device=/dev/kfd" << "--device=/dev/dri"
-         << "-e" << "HSA_OVERRIDE_GFX_VERSION=" + QString::fromUtf8(GFX_VERSION)
-         << "-p" << QString("%1:%2").arg(HOST_PORT).arg(CONTAINER_PORT)
-         << QString::fromUtf8(DOCKER_IMAGE);
 
-    m_dockerProcess->start("docker", args);
+    args
+        << QStringLiteral("run")
+        << QStringLiteral("--rm")
+        << QStringLiteral("-d")
+        << QStringLiteral("--device=/dev/kfd")
+        << QStringLiteral("--device=/dev/dri")
+        << QStringLiteral("-e")
+        << (
+            QStringLiteral("HSA_OVERRIDE_GFX_VERSION=")
+            + QString::fromUtf8(GFX_VERSION)
+        )
+        << QStringLiteral("-p")
+        << QStringLiteral(
+            "%1:%2"
+        ).arg(
+            HOST_PORT
+        ).arg(
+            CONTAINER_PORT
+        )
+        << QString::fromUtf8(DOCKER_IMAGE);
+
+    m_dockerProcess->start(
+        QStringLiteral("docker"),
+        args
+    );
+
     m_containerStarted = true;
 }
 
-void TtsManager::onDockerRunFinished(int exitCode, QProcess::ExitStatus status)
+void TtsManager::onDockerRunFinished(
+    int exitCode,
+    QProcess::ExitStatus status)
 {
-    if (exitCode != 0 || status != QProcess::NormalExit) {
-        emit errorOccurred("Failed to start Docker container.");
+    if (exitCode != 0 ||
+        status != QProcess::NormalExit) {
+        emit errorOccurred(
+            QStringLiteral(
+                "Failed to start Docker container."
+            )
+        );
+
         return;
     }
+
     if (m_containerId.isEmpty()) {
-        QString output = QString::fromUtf8(m_dockerProcess->readAllStandardOutput()).trimmed();
-        if (!output.isEmpty()) {
+        const QString output =
+            QString::fromUtf8(
+                m_dockerProcess
+                    ->readAllStandardOutput()
+            ).trimmed();
+
+        if (!output.isEmpty())
             m_containerId = output;
-        }
     }
 
-    if (!m_containerId.isEmpty()) {
-        qDebug() << "[TTS] Container started with ID:" << m_containerId;
-    } else {
-        qWarning() << "[TTS] Could not get container ID.";
-    }
+    m_serverUrl =
+        QUrl(
+            QStringLiteral(
+                "http://127.0.0.1:%1"
+            ).arg(HOST_PORT)
+        );
 
-    m_serverUrl = QUrl(QString("http://127.0.0.1:%1").arg(HOST_PORT));
     m_healthAttempts = 0;
     m_healthCheckTimer->start();
 }
@@ -192,349 +867,120 @@ void TtsManager::onDockerOutputReady()
 {
     if (!m_dockerProcess)
         return;
-    QByteArray data = m_dockerProcess->readAllStandardOutput();
-    if (data.isEmpty())
-        return;
 
-    if (m_containerId.isEmpty() && m_containerStarted) {
-        QString line = QString::fromUtf8(data).trimmed();
-        if (line.length() == 64 && QRegularExpression("^[a-f0-9]{64}$").match(line).hasMatch()) {
-            m_containerId = line;
-            qDebug() << "[TTS] Captured container ID:" << m_containerId;
-        }
-    }
+    const QByteArray data =
+        m_dockerProcess
+            ->readAllStandardOutput();
 
-    qDebug() << "[Docker stdout]" << data;
+    if (!data.isEmpty())
+        qDebug()
+            << "[Docker stdout]"
+            << data;
 }
 
 void TtsManager::onDockerErrorReady()
 {
-    if (m_dockerProcess) {
-        QByteArray data = m_dockerProcess->readAllStandardError();
-        qWarning() << "[Docker stderr]" << data;
-    }
+    if (!m_dockerProcess)
+        return;
+
+    const QByteArray data =
+        m_dockerProcess
+            ->readAllStandardError();
+
+    if (!data.isEmpty())
+        qWarning()
+            << "[Docker stderr]"
+            << data;
 }
 
 void TtsManager::checkServerHealth()
 {
-    if (!m_initialized) {
-        m_serverUrl = QUrl(QString("http://127.0.0.1:%1").arg(HOST_PORT));
+    if (m_serverUrl.isEmpty()) {
+        m_serverUrl =
+            QUrl(
+                QStringLiteral(
+                    "http://127.0.0.1:%1"
+                ).arg(HOST_PORT)
+            );
     }
 
-    QNetworkRequest request(m_serverUrl.toString() + "/health");
-    request.setHeader(QNetworkRequest::UserAgentHeader, "TalosApp/1.0");
-    QNetworkReply *reply = m_networkManager->get(request);
+    const QUrl healthUrl =
+        m_serverUrl.resolved(
+            QUrl(QStringLiteral("/health"))
+        );
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        if (reply->error() == QNetworkReply::NoError) {
-            int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            if (status == 200) {
-                m_healthCheckTimer->stop();
-                emit serverReady();
-                qDebug() << "[TTS] Server is ready.";
-                reply->deleteLater();
-                return;
+    QNetworkRequest request{healthUrl};
+
+    request.setHeader(
+        QNetworkRequest::UserAgentHeader,
+        QStringLiteral("TalosApp/1.0")
+    );
+
+    QNetworkReply *reply =
+        m_networkManager->get(request);
+
+    connect(
+        reply,
+        &QNetworkReply::finished,
+        this,
+        [this, reply]() {
+            if (reply->error() ==
+                QNetworkReply::NoError) {
+
+                const int status =
+                    reply->attribute(
+                        QNetworkRequest::
+                        HttpStatusCodeAttribute
+                    ).toInt();
+
+                if (status == 200) {
+                    m_healthCheckTimer->stop();
+
+                    emit serverReady();
+
+                    reply->deleteLater();
+
+                    return;
+                }
             }
+
+            ++m_healthAttempts;
+
+            if (m_healthAttempts >=
+                MAX_HEALTH_ATTEMPTS) {
+
+                m_healthCheckTimer->stop();
+
+                emit errorOccurred(
+                    QStringLiteral(
+                        "TTS server did not become ready within timeout."
+                    )
+                );
+            }
+
+            reply->deleteLater();
         }
-        m_healthAttempts++;
-        if (m_healthAttempts >= MAX_HEALTH_ATTEMPTS) {
-            m_healthCheckTimer->stop();
-            emit errorOccurred("TTS server did not become ready within timeout.");
-        }
-        reply->deleteLater();
-    });
+    );
 }
 
 void TtsManager::stopDockerContainer()
 {
-    if (!m_containerStarted || m_containerId.isEmpty())
+    if (!m_containerStarted ||
+        m_containerId.isEmpty()) {
         return;
+    }
+
     QProcess stop;
-    stop.start("docker", QStringList() << "stop" << m_containerId);
+
+    stop.start(
+        QStringLiteral("docker"),
+        QStringList()
+            << QStringLiteral("stop")
+            << m_containerId
+    );
+
     stop.waitForFinished(3000);
+
     m_containerStarted = false;
     m_containerId.clear();
-    qDebug() << "[TTS] Docker container stopped.";
-}
-
-// ------------------------------------------------------------
-// TTS Request and Playback
-// ------------------------------------------------------------
-void TtsManager::setEnabled(bool enabled)
-{
-    m_enabled = enabled;
-    qDebug() << "[TTS] setEnabled =" << enabled;
-    if (!enabled) {
-        stopAndClear();
-    }
-}
-
-void TtsManager::enqueueSentence(const QString &sentence, int speakerId)
-{
-    qDebug() << "[TTS] enqueueSentence called: text length =" << sentence.length()
-             << ", enabled =" << (bool)m_enabled
-             << ", initialized =" << (bool)m_initialized;
-    if (!m_enabled || !m_initialized || sentence.trimmed().isEmpty()) {
-        qDebug() << "[TTS] enqueueSentence aborted.";
-        return;
-    }
-    requestSynthesis(sentence, speakerId);
-}
-
-void TtsManager::requestSynthesis(const QString &text, int speakerId)
-{
-    qDebug() << "[TTS] requestSynthesis: text '" << text.left(50) << "...'";
-
-    QString fullUrl = m_serverUrl.toString() + "/v1/audio/speech";
-    qDebug() << "[TTS] Full URL:" << fullUrl;
-
-    QJsonObject payload;
-    payload["model"] = "kokoro";
-    payload["input"] = text;
-
-    QString voice = QString::fromUtf8(DEFAULT_VOICE);
-    if (speakerId == 1) voice = "af_heart";
-    else if (speakerId == 2) voice = "af_nicole";
-    payload["voice"] = voice;
-    payload["response_format"] = "pcm";
-
-    QByteArray jsonData = QJsonDocument(payload).toJson();
-    qDebug() << "[TTS] JSON payload:" << jsonData;
-
-    QNetworkRequest request(m_serverUrl);
-    request.setUrl(fullUrl);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setHeader(QNetworkRequest::UserAgentHeader, "TalosApp/1.0");
-
-    QTimer *timeoutTimer = new QTimer(this);
-    timeoutTimer->setSingleShot(true);
-    timeoutTimer->setInterval(10000);
-
-    QNetworkReply *reply = m_networkManager->post(request, jsonData);
-    reply->setProperty("speakerId", speakerId);
-    reply->setProperty("text", text);
-
-    // Direct reply signal – used as a fallback if manager signal fails
-    connect(reply, &QNetworkReply::finished, this, [this, reply, timeoutTimer]() {
-        qDebug() << "[TTS] Direct reply finished signal received.";
-        timeoutTimer->stop();
-        timeoutTimer->deleteLater();
-        // If the manager signal didn't trigger, process here.
-        // But we will also let the manager signal do it.
-        // We can call processReply(reply) directly if needed.
-        processReply(reply);
-    });
-
-    connect(timeoutTimer, &QTimer::timeout, this, [this, reply, timeoutTimer]() {
-        if (reply && reply->isRunning()) {
-            qWarning() << "[TTS] Request timed out, aborting.";
-            reply->abort();
-            emit errorOccurred("TTS request timed out after 10 seconds.");
-        }
-        timeoutTimer->deleteLater();
-    });
-    timeoutTimer->start();
-
-    qDebug() << "[TTS] POST request sent to" << fullUrl;
-}
-
-void TtsManager::onTtsReplyFinished()
-{
-    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-    if (!reply) {
-        qWarning() << "[TTS] onTtsReplyFinished called with null sender.";
-        return;
-    }
-    qDebug() << "[TTS] Reply received (manager slot).";
-    processReply(reply);
-}
-
-// Centralised reply processing
-void TtsManager::processReply(QNetworkReply *reply)
-{
-    if (!reply) return;
-
-    qDebug() << "[TTS] Processing reply. Error? " << (reply->error() != QNetworkReply::NoError);
-    qDebug() << "[TTS] HTTP status code:" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-
-    if (reply->error() != QNetworkReply::NoError) {
-        QString err = QString("TTS request failed: %1").arg(reply->errorString());
-        qWarning() << "[TTS]" << err;
-        emit errorOccurred(err);
-        reply->deleteLater();
-        return;
-    }
-
-    int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    if (httpStatus != 200) {
-        QString err = QString("TTS server returned HTTP %1").arg(httpStatus);
-        QByteArray body = reply->readAll();
-        if (!body.isEmpty()) {
-            err += ": " + QString::fromUtf8(body);
-        }
-        qWarning() << "[TTS]" << err;
-        emit errorOccurred(err);
-        reply->deleteLater();
-        return;
-    }
-
-    int speakerId = reply->property("speakerId").toInt();
-    QByteArray audioData = reply->readAll();
-    qDebug() << "[TTS] Audio data size:" << audioData.size() << "bytes";
-
-    if (audioData.isEmpty()) {
-        qWarning() << "[TTS] Empty audio response";
-        emit errorOccurred("Empty audio data from TTS server");
-        reply->deleteLater();
-        return;
-    }
-
-    const int sampleRate = 24000;
-
-    AudioChunk chunk;
-    chunk.data = audioData;
-    chunk.sampleRate = sampleRate;
-    chunk.speakerId = speakerId;
-    chunk.timestamp = QDateTime::currentMSecsSinceEpoch();
-
-    {
-        QMutexLocker locker(&m_queueMutex);
-        m_audioQueue.enqueue(chunk);
-        qDebug() << "[TTS] Audio chunk enqueued. Queue size:" << m_audioQueue.size();
-    }
-
-    emit sentenceQueued(speakerId);
-
-    if (!m_isPlaying) {
-        qDebug() << "[TTS] Starting playback from processReply";
-        playNextInQueue();
-    }
-
-    reply->deleteLater();
-}
-
-// ------------------------------------------------------------
-// Playback (unchanged)
-// ------------------------------------------------------------
-void TtsManager::playNextInQueue()
-{
-    qDebug() << "[TTS] playNextInQueue called, enabled=" << (bool)m_enabled;
-    if (!m_enabled)
-        return;
-
-    AudioChunk chunk;
-    bool hasChunk = false;
-
-    {
-        QMutexLocker locker(&m_queueMutex);
-        if (!m_audioQueue.isEmpty()) {
-            chunk = m_audioQueue.dequeue();
-            hasChunk = true;
-            qDebug() << "[TTS] Dequeued chunk, remaining:" << m_audioQueue.size();
-        }
-    }
-
-    if (!hasChunk) {
-        m_isPlaying = false;
-        qDebug() << "[TTS] No chunk to play, m_isPlaying = false";
-        return;
-    }
-
-    m_isPlaying = true;
-    qDebug() << "[TTS] Playing chunk, sample rate=" << chunk.sampleRate
-             << ", data size=" << chunk.data.size();
-
-    QAudioFormat format;
-    format.setSampleRate(chunk.sampleRate);
-    format.setChannelCount(1);
-    format.setSampleFormat(QAudioFormat::Int16);
-
-    bool needNewSink = !m_audioSink || m_audioSink->format() != format;
-
-    if (needNewSink) {
-        cleanupAudioSink();
-
-        const QAudioDevice &defaultDevice = QMediaDevices::defaultAudioOutput();
-        if (defaultDevice.isNull()) {
-            m_isPlaying = false;
-            emit errorOccurred("No audio output device available");
-            qWarning() << "[TTS] No audio device available";
-            return;
-        }
-
-        m_audioSink = std::make_unique<QAudioSink>(defaultDevice, format);
-        connect(m_audioSink.get(), &QAudioSink::stateChanged,
-                this, &TtsManager::onAudioStateChanged, Qt::QueuedConnection);
-        qDebug() << "[TTS] Audio sink created with format" << format.sampleRate();
-    }
-
-    {
-        QMutexLocker bufferLocker(&m_audioBufferMutex);
-        if (m_audioBuffer.isOpen())
-            m_audioBuffer.close();
-        m_audioBuffer.setData(chunk.data);
-        m_audioBuffer.open(QIODevice::ReadOnly);
-    }
-
-    if (m_audioSink) {
-        m_audioSink->start(&m_audioBuffer);
-        qDebug() << "[TTS] Audio sink started";
-    }
-}
-
-void TtsManager::onAudioStateChanged(QAudio::State state)
-{
-    qDebug() << "[TTS] Audio state changed:" << state;
-    if (!m_audioSink)
-        return;
-
-    if (state == QAudio::IdleState ||
-        (state == QAudio::StoppedState && m_audioSink->error() != QAudio::NoError)) {
-        m_isPlaying = false;
-        emit sentenceFinished();
-        qDebug() << "[TTS] Sentence finished, playing next";
-        playNextInQueue();
-    }
-}
-
-void TtsManager::cleanupAudioSink()
-{
-    if (m_audioSink) {
-        m_audioSink->stop();
-        m_audioSink->disconnect();
-        m_audioSink.reset();
-    }
-}
-
-void TtsManager::stopAndClear()
-{
-    qDebug() << "[TTS] stopAndClear called";
-    {
-        QMutexLocker locker(&m_queueMutex);
-        m_audioQueue.clear();
-    }
-
-    cleanupAudioSink();
-
-    {
-        QMutexLocker bufferLocker(&m_audioBufferMutex);
-        if (m_audioBuffer.isOpen())
-            m_audioBuffer.close();
-    }
-
-    m_isPlaying = false;
-
-    if (m_currentReply) {
-        m_currentReply->abort();
-        m_currentReply->deleteLater();
-        m_currentReply = nullptr;
-    }
-
-    m_healthCheckTimer->stop();
-}
-
-int TtsManager::queueSize() const
-{
-    QMutexLocker locker(&m_queueMutex);
-    return m_audioQueue.size();
 }

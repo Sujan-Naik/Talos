@@ -2,81 +2,93 @@
 #define CHATBACKEND_H
 
 #include <QObject>
-#include <QString>
 #include <QStringList>
-#include <QList>
 
 class TtsManager;
 
-/**
- * ChatBackend bridges the UI, TTS, and the LLM stream.
- * It handles sentence splitting, markdown cleaning, and queuing TTS requests.
- */
 class ChatBackend : public QObject
 {
     Q_OBJECT
 
+    Q_PROPERTY(bool ttsEnabled
+               READ isTtsEnabled
+               NOTIFY ttsEnabledChanged)
+
+    Q_PROPERTY(QString ttsVoice
+               READ ttsVoice
+               WRITE setTtsVoice
+               NOTIFY ttsVoiceChanged)
+
+    Q_PROPERTY(QStringList ttsVoices
+               READ ttsVoices
+               NOTIFY ttsVoicesChanged)
+
 public:
     explicit ChatBackend(QObject *parent = nullptr);
-    ~ChatBackend();
+    ~ChatBackend() override;
 
-    /** Check if TTS is fully initialised and ready. */
     bool isTtsReady() const;
+    bool isTtsEnabled() const;
+
+    QString ttsVoice() const;
+    QStringList ttsVoices() const;
+
+    Q_INVOKABLE void setTtsVoice(const QString &voice);
+    Q_INVOKABLE void onTtsToggled(bool enabled);
+    Q_INVOKABLE void previewTtsVoice();
 
 public slots:
-    /** Speak a complete text immediately (enqueues it). */
-    void speak(const QString &text);
-
-    /** Stop all ongoing speech and clear the queue. */
-    void stopSpeech();
-
-    /** Enable/disable TTS output. */
-    void onTtsToggled(bool enabled);
-
-    /** Called when the user sends a message. */
     void onUserSendMessage(const QString &message);
-
-    /** Called when a new delta arrives from the AI stream. */
     void handleAiStreamDelta(const QString &deltaText);
-
-    /** Called when the AI stream finishes. */
     void handleAiStreamFinished();
 
-    /** Request a screen capture. */
     void requestCapture();
-
-    /** Request to toggle the microphone. */
     void requestToggleMic();
+
+    void speak(const QString &text);
+    void stopSpeech();
 
 signals:
     void messageReceived(const QString &message);
+
     void captureRequested();
     void micToggleRequested();
+
     void ttsError(const QString &error);
+
+    void ttsEnabledChanged(bool enabled);
+    void ttsVoiceChanged(const QString &voice);
+    void ttsVoicesChanged(const QStringList &voices);
 
 private slots:
     void onTtsServerReady();
     void handleTtsSentenceFinished();
     void handleTtsError(const QString &error);
+    void handleTtsVoicesChanged(const QStringList &voices);
 
 private:
-    // TTS management
-    TtsManager *m_tts;
-    bool        m_ttsInitialized;      // true only after serverReady
-    bool        m_ttsEnabled;
-    bool        m_ttsProcessing;
-
-    QString     m_ttsBuffer;           // accumulates incoming delta text
-    QStringList m_ttsQueue;            // sentences waiting to be sent to TTS
-    QList<QString> m_pendingTtsSentences; // sentences queued before server ready
-
-    // Internal helpers
     void setupTts();
-    void splitAndEnqueueSentences();
+
     void enqueueTtsSentence(const QString &text);
     void processTtsQueue();
+    void splitAndEnqueueSentences();
     void flushTtsBuffer();
+
     QString cleanMarkdown(const QString &text) const;
+
+    TtsManager *m_tts = nullptr;
+
+    bool m_ttsInitialized = false;
+    bool m_ttsEnabled = false;
+    bool m_ttsProcessing = false;
+
+    QString m_ttsBuffer;
+
+    QStringList m_ttsQueue;
+    QStringList m_pendingTtsSentences;
+
+    QString m_ttsVoice = QStringLiteral("af_bella");
+    QStringList m_ttsVoices;
 };
 
 #endif // CHATBACKEND_H
