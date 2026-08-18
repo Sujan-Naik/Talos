@@ -37,6 +37,7 @@ FetchContent_MakeAvailable(whisper)
 
 # -----------------------------------------------------------------------------
 # 2. Cross-Platform ONNX Runtime Prebuilt Resolver
+#    (kept for openWakeWord and other components)
 # -----------------------------------------------------------------------------
 set(ONNXRUNTIME_VERSION "1.17.1")
 
@@ -77,59 +78,14 @@ set_target_properties(ONNXRuntime::ONNXRuntime PROPERTIES
         IMPORTED_LOCATION             "${ONNXRUNTIME_LIBRARY}"
 )
 
-# Make the prebuilt ONNX Runtime visible to sherpa-onnx
-set(ENV{SHERPA_ONNXRUNTIME_INCLUDE_DIR} "${ONNXRUNTIME_INCLUDE_DIR}")
-set(ENV{SHERPA_ONNXRUNTIME_LIB_DIR}     "${onnxruntime_prebuilt_SOURCE_DIR}/lib")
-set(SHERPA_ONNXRUNTIME_INCLUDE_DIR "${ONNXRUNTIME_INCLUDE_DIR}" CACHE PATH "" FORCE)
-set(SHERPA_ONNXRUNTIME_LIB_DIR     "${onnxruntime_prebuilt_SOURCE_DIR}/lib" CACHE PATH "" FORCE)
-
 # -----------------------------------------------------------------------------
-# 3. Sherpa-ONNX Integration
-# -----------------------------------------------------------------------------
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "Minimum policy version" FORCE)
-
-set(SHERPA_ONNX_ENABLE_PYTHON               OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_ENABLE_TESTS                OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_ENABLE_CHECK                OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_ENABLE_PORTAUDIO            OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_ENABLE_WEBSOCKET            OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_ENABLE_BINARY               OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_BUILD_C_API_EXAMPLES        OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_ENABLE_C_API                ON  CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_ENABLE_TTS                  ON  CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY   OFF CACHE BOOL "" FORCE)
-set(SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE ON CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS                       OFF CACHE BOOL "" FORCE)
-
-if(POLICY CMP0169)
-    cmake_policy(SET CMP0169 OLD)
-endif()
-
-FetchContent_Declare(
-        sherpa_onnx
-        GIT_REPOSITORY https://github.com/k2-fsa/sherpa-onnx.git
-        GIT_TAG        v1.10.45
-)
-FetchContent_GetProperties(sherpa_onnx)
-if(NOT sherpa_onnx_POPULATED)
-    FetchContent_Populate(sherpa_onnx)
-    list(APPEND CMAKE_MODULE_PATH "${sherpa_onnx_SOURCE_DIR}/cmake")
-    add_subdirectory(${sherpa_onnx_SOURCE_DIR} ${sherpa_onnx_BINARY_DIR} EXCLUDE_FROM_ALL)
-    if(TARGET sherpa-onnx-core)
-        target_include_directories(sherpa-onnx-core PUBLIC "${sherpa_onnx_SOURCE_DIR}")
-    endif()
-endif()
-
-# -----------------------------------------------------------------------------
-# 4. Model Downloader with proper error checking
+# 3. Model Downloader (Whisper + openWakeWord only; Kokoro now served externally)
 # -----------------------------------------------------------------------------
 set(MODELS_DIR "${CMAKE_BINARY_DIR}/models")
 file(MAKE_DIRECTORY "${MODELS_DIR}")
 
-# Helper function to download files with size checking
 function(download_model url dest description)
     set(should_download FALSE)
-
     if(NOT EXISTS "${dest}")
         set(should_download TRUE)
     else()
@@ -145,16 +101,13 @@ function(download_model url dest description)
                 SHOW_PROGRESS
                 STATUS download_status
                 TIMEOUT 300)
-
         list(GET download_status 0 status_code)
         list(GET download_status 1 error_message)
-
         if(NOT status_code EQUAL 0)
             message(WARNING "Failed to download ${description}: ${error_message}")
             message(WARNING "URL: ${url}")
             message(WARNING "You may need to download manually and place it at: ${dest}")
         else()
-            # Verify the file is not empty
             file(SIZE "${dest}" file_size)
             if(file_size EQUAL 0)
                 message(WARNING "Downloaded ${description} is empty (0 bytes)")
@@ -192,24 +145,8 @@ foreach(INDEX RANGE ${MAX_OWW_INDEX})
     download_model("${FILE_URL}" "${DEST_PATH}" "openWakeWord model ${MODEL_FILE}")
 endforeach()
 
-set(KOKORO_ARCHIVE_URL "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-en-v0_19.tar.bz2")
-set(KOKORO_ARCHIVE "${MODELS_DIR}/kokoro-en-v0_19.tar.bz2")
-
-# Download the archive
-file(DOWNLOAD "${KOKORO_ARCHIVE_URL}" "${KOKORO_ARCHIVE}" SHOW_PROGRESS)
-
-# Extract the archive into the MODELS_DIR
-# This will create a new directory: ${MODELS_DIR}/kokoro-en-v0_19/
-execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xjf "${KOKORO_ARCHIVE}"
-        WORKING_DIRECTORY "${MODELS_DIR}"
-)
-
-# Optional: Remove the archive after extraction
-file(REMOVE "${KOKORO_ARCHIVE}")
-
 # -----------------------------------------------------------------------------
-# 5. OCR Libraries (Tesseract / Leptonica) with Fallbacks
+# 4. OCR Libraries (Tesseract / Leptonica) with Fallbacks
 # -----------------------------------------------------------------------------
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
@@ -227,7 +164,7 @@ if(NOT LEPTONICA_FOUND)
 endif()
 
 # -----------------------------------------------------------------------------
-# 6. Executable Target & Linkage
+# 5. Executable Target & Linkage
 # -----------------------------------------------------------------------------
 qt_add_executable(Talos
         src/main.cpp
@@ -280,8 +217,6 @@ target_include_directories(Talos PRIVATE
         ${LEPTONICA_INCLUDE_DIRS}
         ${whisper_SOURCE_DIR}
         ${ONNXRUNTIME_INCLUDE_DIR}
-        ${sherpa_onnx_SOURCE_DIR}/sherpa-onnx/c-api
-        ${sherpa_onnx_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
@@ -296,8 +231,6 @@ target_link_libraries(Talos PRIVATE
         Qt6::WebChannel
         Qt6::TextToSpeech
         whisper
-        sherpa-onnx-core
-        sherpa-onnx-c-api
         ONNXRuntime::ONNXRuntime
         ${TESSERACT_LIBRARIES}
         ${LEPTONICA_LIBRARIES}
@@ -342,8 +275,6 @@ add_custom_command(
         "${MODELS_DIR}"
         "$<TARGET_FILE_DIR:Talos>/models"
 )
-
-target_compile_definitions(Talos PRIVATE KOKORO_MODEL_DIR="${MODELS_DIR}/kokoro-en-v0_19")
 
 # Deploy the correct ONNX Runtime shared library next to the executable
 if(WIN32)

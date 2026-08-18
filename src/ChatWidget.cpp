@@ -26,7 +26,6 @@
 ChatWidget::ChatWidget(QWidget *parent)
     : QWidget(parent)
 {
-    // Clean layout using full widget area for HTML WebEngine frame
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -39,9 +38,6 @@ ChatWidget::ChatWidget(QWidget *parent)
     m_backend = new ChatBackend(this);
     m_overlay = new CaptureOverlay(this);
 
-    // -------------------------------------------------
-    // TTS initialization is now handled in ChatBackend constructor
-    // -------------------------------------------------
     if (m_backend->isTtsReady()) {
         qDebug() << "[ChatWidget] Kokoro TTS model is ready";
     } else {
@@ -53,12 +49,10 @@ ChatWidget::ChatWidget(QWidget *parent)
         qWarning() << "  espeak-ng-data/";
     }
 
-    // Register backend with QWebChannel
     auto *channel = new QWebChannel(m_webEngineView->page());
     channel->registerObject(QStringLiteral("backend"), m_backend);
     m_webEngineView->page()->setWebChannel(channel);
 
-    // Wire JavaScript frontend signals triggered via QWebChannel
     connect(m_backend, &ChatBackend::messageReceived, this, [this](const QString &text) {
         if (!text.isEmpty()) {
             appendMessageAsUser(text);
@@ -81,6 +75,7 @@ ChatWidget::ChatWidget(QWidget *parent)
     m_webEngineView->load(QUrl("qrc:///widgets/chat/chat.html"));
     setHoleEnabled(false);
 }
+
 void ChatWidget::setHoleRect(const QRect &hole, bool enabled) {
     Q_UNUSED(enabled);
     setHoleRect(hole);
@@ -176,15 +171,18 @@ void ChatWidget::appendToCurrentAiMessage(const QString &deltaText) {
 
 void ChatWidget::appendMessageAsUser(const QString &text) {
     appendMessage(text, true);
+
     QJsonObject messageObj;
     messageObj["role"] = "user";
     messageObj["content"] = text;
     m_conversationHistory.append(messageObj);
+
     emit messageSent(text);
 }
 
 void ChatWidget::appendMessageAsAi(const QString &text) {
     appendMessage(text, false);
+
     QJsonObject messageObj;
     messageObj["role"] = "assistant";
     messageObj["content"] = text;
@@ -192,6 +190,10 @@ void ChatWidget::appendMessageAsAi(const QString &text) {
 }
 
 void ChatWidget::sendApiRequest() {
+    if (m_backend) {
+        m_backend->stopSpeech();
+    }
+
     if (m_currentReply) {
         m_currentReply->abort();
         m_currentReply->deleteLater();
@@ -241,6 +243,7 @@ void ChatWidget::toggleMicrophone() {
         m_silenceMs = 0;
         m_recorder->startRecording();
         m_vadTimer->start(100);
+
         if (m_isPageLoaded) {
             m_webEngineView->page()->runJavaScript("if(typeof window.setMicState==='function') window.setMicState('recording');");
         }
@@ -277,6 +280,7 @@ void ChatWidget::processVadChunk() {
 void ChatWidget::stopMicrophoneAndTranscribe() {
     m_vadTimer->stop();
     m_isRecording = false;
+
     if (m_isPageLoaded) {
         m_webEngineView->page()->runJavaScript("if(typeof window.setMicState==='function') window.setMicState('idle');");
     }
@@ -287,7 +291,10 @@ void ChatWidget::stopMicrophoneAndTranscribe() {
         if (!transcribedText.isEmpty() && m_isPageLoaded) {
             QString escaped = transcribedText;
             escaped.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
-            m_webEngineView->page()->runJavaScript(QString("if(typeof window.setInputValue==='function') window.setInputValue(\"%1\");").arg(escaped));
+
+            m_webEngineView->page()->runJavaScript(
+                QString("if(typeof window.setInputValue==='function') window.setInputValue(\"%1\");").arg(escaped)
+            );
         }
     }
 }
@@ -432,6 +439,10 @@ void ChatWidget::handleReadyRead() {
             }
 
             if (!deltaText.isEmpty()) {
+                if (m_backend) {
+                    m_backend->handleAiStreamDelta(deltaText);
+                }
+
                 if (!m_isStreamingAi) {
                     m_isStreamingAi = true;
                     appendMessageAsAi(deltaText);
@@ -441,6 +452,7 @@ void ChatWidget::handleReadyRead() {
                         lastObj["content"] = lastObj["content"].toString() + deltaText;
                         m_conversationHistory[m_conversationHistory.size() - 1] = lastObj;
                     }
+
                     appendToCurrentAiMessage(deltaText);
                 }
             }
@@ -454,10 +466,7 @@ void ChatWidget::handleReplyFinished() {
         m_currentReply = nullptr;
     }
 
-    // Notify JavaScript that streaming has ended so TTS can trigger
-    if (m_isPageLoaded && m_webEngineView) {
-        m_webEngineView->page()->runJavaScript(
-            "if(typeof window.onAiStreamFinished==='function') window.onAiStreamFinished();"
-        );
+    if (m_backend) {
+        m_backend->handleAiStreamFinished();
     }
 }
