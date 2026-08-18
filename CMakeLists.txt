@@ -198,6 +198,10 @@ qt_add_executable(Talos
         include/EditorCommandExecutor.h
         src/TtsManager.cpp
         include/TtsManager.h
+        src/ProjectModel.cpp
+        include/ProjectModel.h
+        src/CodingAgent.cpp
+        include/CodingAgent.h
 )
 
 qt_add_resources(Talos "widget_resources"

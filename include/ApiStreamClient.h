@@ -39,4 +39,5 @@ private:
     QNetworkReply *m_currentReply = nullptr;
     QByteArray m_streamBuffer;
     std::unique_ptr<StreamEventParser> m_parser;
+    bool m_requestFailed = false;
 };

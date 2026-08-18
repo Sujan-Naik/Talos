@@ -1,493 +1,1946 @@
 window.backend = null;
+window.project = null;
+
 window.editor = null;
 window.overlayEl = null;
-console.log('[code.js] file loaded and parsed successfully');
+
+window.projectTree = [];
+window.currentFilePath = '';
+
+/*
+ * Review annotations are kept in application memory.
+ *
+ * They may refer to multiple project files:
+ *
+ *   src/rendering/Camera.cpp
+ *   include/rendering/Camera.h
+ *
+ * Monaco only receives the annotations belonging to the
+ * currently open file.
+ */
+var allAnnotations = [];
+
+console.log(
+    '[code.js] file loaded and parsed successfully'
+);
 
 require.config({
-    paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }
+    paths: {
+        vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs'
+    }
 });
 
+// ------------------------------------------------------------
+// Backend synchronization
+// ------------------------------------------------------------
+
 function notifyBackendCodeChange() {
-    if (window.editor && window.backend && typeof window.backend.onCodeChanged === 'function') {
-        window.backend.onCodeChanged(window.editor.getValue());
+    if (
+        window.editor &&
+        window.backend &&
+        typeof window.backend.onCodeChanged ===
+        'function'
+    ) {
+        window.backend.onCodeChanged(
+            window.editor.getValue()
+        );
     }
 }
 
-// ----- Annotation overlay state -----
-var currentAnnotations = [];
-var annotationMarkers = [];
-var activeBubble = null;
+// ------------------------------------------------------------
+// Path helpers
+// ------------------------------------------------------------
+
+function normalizeProjectPath(value) {
+    if (!value) {
+        return '';
+    }
+
+    return String(value)
+        .replace(/\\/g, '/')
+        .replace(/^\.\/+/, '');
+}
+
+function sameProjectPath(a, b) {
+    return (
+        normalizeProjectPath(a) ===
+        normalizeProjectPath(b)
+    );
+}
+
+// ------------------------------------------------------------
+// Monaco-native review markers
+// ------------------------------------------------------------
+
+function clearCurrentMonacoMarkers() {
+    if (
+        !window.editor ||
+        !window.monaco
+    ) {
+        return;
+    }
+
+    var model =
+        window.editor.getModel();
+
+    if (!model) {
+        return;
+    }
+
+    window.monaco.editor.setModelMarkers(
+        model,
+        'talos-review',
+        []
+    );
+}
+
+function annotationSeverityToMonaco(
+    severity
+) {
+    if (!window.monaco) {
+        return 8;
+    }
+
+    switch (
+        String(
+            severity || 'info'
+        ).toLowerCase()
+        ) {
+        case 'error':
+            return (
+                window.monaco.MarkerSeverity.Error
+            );
+
+        case 'warning':
+            return (
+                window.monaco.MarkerSeverity.Warning
+            );
+
+        case 'info':
+        default:
+            return (
+                window.monaco.MarkerSeverity.Info
+            );
+    }
+}
+
+function getAnnotationFile(
+    annotation
+) {
+    if (
+        !annotation ||
+        !annotation.file
+    ) {
+        return '';
+    }
+
+    return normalizeProjectPath(
+        annotation.file
+    );
+}
+
+function getAnnotationsForCurrentFile() {
+    if (
+        !window.currentFilePath
+    ) {
+        return [];
+    }
+
+    return allAnnotations.filter(
+        function (annotation) {
+            return sameProjectPath(
+                getAnnotationFile(
+                    annotation
+                ),
+                window.currentFilePath
+            );
+        }
+    );
+}
+
+function clampLine(
+    model,
+    line
+) {
+    var value =
+        Number(line);
+
+    if (
+        !isFinite(value)
+    ) {
+        value = 1;
+    }
+
+    return Math.max(
+        1,
+        Math.min(
+            model.getLineCount(),
+            Math.floor(value)
+        )
+    );
+}
+
+function clampColumn(
+    model,
+    line,
+    column
+) {
+    var value =
+        Number(column);
+
+    if (
+        !isFinite(value)
+    ) {
+        value = 1;
+    }
+
+    var maxColumn =
+        model.getLineMaxColumn(
+            line
+        );
+
+    return Math.max(
+        1,
+        Math.min(
+            maxColumn,
+            Math.floor(value)
+        )
+    );
+}
+
+function applyCurrentFileAnnotations() {
+    if (
+        !window.editor ||
+        !window.monaco
+    ) {
+        return;
+    }
+
+    var model =
+        window.editor.getModel();
+
+    if (!model) {
+        return;
+    }
+
+    var annotations =
+        getAnnotationsForCurrentFile();
+
+    var markers = [];
+
+    for (
+        var i = 0;
+        i < annotations.length;
+        ++i
+    ) {
+        var annotation =
+            annotations[i];
+
+        var startLine =
+            clampLine(
+                model,
+                annotation.startLine
+            );
+
+        var endLine =
+            clampLine(
+                model,
+                annotation.endLine ||
+                startLine
+            );
+
+        if (
+            endLine < startLine
+        ) {
+            endLine =
+                startLine;
+        }
+
+        var startColumn =
+            clampColumn(
+                model,
+                startLine,
+                annotation.startColumn
+            );
+
+        var endColumn =
+            clampColumn(
+                model,
+                endLine,
+                annotation.endColumn
+            );
+
+        /*
+         * Monaco expects the end position to be at or after
+         * the start position.
+         */
+        if (
+            endLine === startLine &&
+            endColumn < startColumn
+        ) {
+            endColumn =
+                startColumn;
+        }
+
+        markers.push({
+            severity:
+                annotationSeverityToMonaco(
+                    annotation.severity
+                ),
+
+            message:
+                String(
+                    annotation.message ||
+                    'No message'
+                ),
+
+            startLineNumber:
+            startLine,
+
+            startColumn:
+            startColumn,
+
+            endLineNumber:
+            endLine,
+
+            endColumn:
+            endColumn,
+
+            source:
+                'Talos'
+        });
+    }
+
+    console.log(
+        '[code.js] Applying',
+        markers.length,
+        'Monaco markers for:',
+        window.currentFilePath
+    );
+
+    window.monaco.editor.setModelMarkers(
+        model,
+        'talos-review',
+        markers
+    );
+}
 
 function clearAnnotationOverlay() {
-    if (overlayEl) {
-        while (overlayEl.firstChild) {
-            overlayEl.removeChild(overlayEl.firstChild);
+    /*
+     * Kept as a compatibility function because existing C++
+     * code calls window.clearAnnotations().
+     *
+     * There is no DOM overlay anymore. We simply clear the
+     * current Monaco markers.
+     */
+    clearCurrentMonacoMarkers();
+}
+
+window.clearAnnotations =
+    function () {
+        console.log(
+            '[code.js] Clearing all review annotations'
+        );
+
+        allAnnotations = [];
+
+        clearCurrentMonacoMarkers();
+    };
+
+window.setAnnotations =
+    function (annotations) {
+        var parsed =
+            annotations;
+
+        if (
+            typeof annotations ===
+            'string'
+        ) {
+            try {
+                parsed =
+                    JSON.parse(
+                        annotations
+                    );
+            } catch (error) {
+                console.error(
+                    '[code.js] annotation parse failed:',
+                    error
+                );
+
+                return;
+            }
+        }
+
+        if (
+            !Array.isArray(parsed)
+        ) {
+            console.error(
+                '[code.js] setAnnotations expected an array:',
+                parsed
+            );
+
+            return;
+        }
+
+        console.log(
+            '[code.js] Received',
+            parsed.length,
+            'annotations'
+        );
+
+        console.log(
+            '[code.js] Current file:',
+            window.currentFilePath
+        );
+
+        allAnnotations =
+            parsed.map(
+                function (annotation) {
+                    return Object.assign(
+                        {},
+                        annotation
+                    );
+                }
+            );
+
+        applyCurrentFileAnnotations();
+    };
+
+window.getAnnotations =
+    function () {
+        return allAnnotations.slice();
+    };
+
+// ------------------------------------------------------------
+// Project tree
+// ------------------------------------------------------------
+
+window.setProjectTree =
+    function (tree) {
+        if (
+            !Array.isArray(tree)
+        ) {
+            return;
+        }
+
+        window.projectTree =
+            tree;
+
+        renderProjectTree();
+    };
+
+function createProjectTreeNode(
+    node
+) {
+    var li =
+        document.createElement(
+            'li'
+        );
+
+    li.className =
+        'project-tree-item';
+
+    var row =
+        document.createElement(
+            'button'
+        );
+
+    row.type =
+        'button';
+
+    row.className =
+        'project-tree-row';
+
+    var chevron =
+        document.createElement(
+            'span'
+        );
+
+    chevron.className =
+        'project-tree-chevron';
+
+    var icon =
+        document.createElement(
+            'span'
+        );
+
+    icon.className =
+        'project-tree-icon';
+
+    var label =
+        document.createElement(
+            'span'
+        );
+
+    label.className =
+        'project-tree-label';
+
+    label.textContent =
+        node.name || '';
+
+    // --------------------------------------------------------
+    // Directory
+    // --------------------------------------------------------
+
+    if (
+        node.type ===
+        'directory'
+    ) {
+        chevron.textContent =
+            '▸';
+
+        icon.textContent =
+            '📁';
+
+        var children =
+            document.createElement(
+                'ul'
+            );
+
+        children.className =
+            'project-tree-children';
+
+        var childNodes =
+            Array.isArray(
+                node.children
+            )
+                ? node.children
+                : [];
+
+        childNodes.forEach(
+            function (child) {
+                children.appendChild(
+                    createProjectTreeNode(
+                        child
+                    )
+                );
+            }
+        );
+
+        children.style.display =
+            'none';
+
+        row.addEventListener(
+            'click',
+            function (event) {
+                event.stopPropagation();
+
+                var expanded =
+                    children.style.display !==
+                    'none';
+
+                children.style.display =
+                    expanded
+                        ? 'none'
+                        : 'block';
+
+                chevron.textContent =
+                    expanded
+                        ? '▸'
+                        : '▾';
+            }
+        );
+
+        row.appendChild(
+            chevron
+        );
+
+        row.appendChild(
+            icon
+        );
+
+        row.appendChild(
+            label
+        );
+
+        li.appendChild(
+            row
+        );
+
+        li.appendChild(
+            children
+        );
+
+        return li;
+    }
+
+    // --------------------------------------------------------
+    // File
+    // --------------------------------------------------------
+
+    icon.textContent =
+        '📄';
+
+    if (
+        sameProjectPath(
+            node.path,
+            window.currentFilePath
+        )
+    ) {
+        row.classList.add(
+            'active'
+        );
+    }
+
+    row.addEventListener(
+        'click',
+        function (event) {
+            event.stopPropagation();
+
+            console.log(
+                '[code.js] Opening project file:',
+                node.path
+            );
+
+            if (
+                window.backend &&
+                typeof window.backend.requestOpenFile ===
+                'function'
+            ) {
+                window.backend.requestOpenFile(
+                    node.path
+                );
+            }
+        }
+    );
+
+    row.appendChild(
+        chevron
+    );
+
+    row.appendChild(
+        icon
+    );
+
+    row.appendChild(
+        label
+    );
+
+    li.appendChild(
+        row
+    );
+
+    return li;
+}
+
+function renderProjectTree() {
+    var container =
+        document.getElementById(
+            'project-files-list'
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML =
+        '';
+
+    var tree =
+        document.createElement(
+            'ul'
+        );
+
+    tree.className =
+        'project-tree';
+
+    window.projectTree.forEach(
+        function (node) {
+            tree.appendChild(
+                createProjectTreeNode(
+                    node
+                )
+            );
+        }
+    );
+
+    container.appendChild(
+        tree
+    );
+}
+
+window.setCurrentFile =
+    function (filePath) {
+        var normalized =
+            normalizeProjectPath(
+                filePath
+            );
+
+        console.log(
+            '[code.js] setCurrentFile:',
+            normalized
+        );
+
+        window.currentFilePath =
+            normalized;
+
+        renderProjectTree();
+
+        /*
+         * Important:
+         * switching files changes the active Monaco model
+         * contents, so immediately apply the annotations that
+         * belong to the new file.
+         */
+        applyCurrentFileAnnotations();
+    };
+
+// ------------------------------------------------------------
+// Persistent chat
+// ------------------------------------------------------------
+
+function ensureChatVisible() {
+    var panel =
+        document.getElementById(
+            'side-panel'
+        );
+
+    if (panel) {
+        panel.classList.add(
+            'open'
+        );
+    }
+}
+
+function appendChatMessage(
+    text,
+    isUser
+) {
+    var container =
+        document.getElementById(
+            'answer-content'
+        );
+
+    if (!container) {
+        return;
+    }
+
+    var empty =
+        container.querySelector(
+            '.chat-empty'
+        );
+
+    if (empty) {
+        empty.remove();
+    }
+
+    var message =
+        document.createElement(
+            'div'
+        );
+
+    message.className =
+        'chat-message ' +
+        (
+            isUser
+                ? 'user'
+                : 'assistant'
+        );
+
+    var bubble =
+        document.createElement(
+            'div'
+        );
+
+    bubble.className =
+        'chat-bubble';
+
+    bubble.innerHTML =
+        isUser
+            ? escapeHtml(
+                text
+            ).replace(
+                /\n/g,
+                '<br>'
+            )
+            : markdownToHtml(
+                text
+            );
+
+    message.appendChild(
+        bubble
+    );
+
+    container.appendChild(
+        message
+    );
+
+    ensureChatVisible();
+
+    scrollChatToBottom();
+}
+
+function restoreChat(
+    messages
+) {
+    var container =
+        document.getElementById(
+            'answer-content'
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML =
+        '';
+
+    if (
+        !Array.isArray(messages) ||
+        messages.length === 0
+    ) {
+        var empty =
+            document.createElement(
+                'div'
+            );
+
+        empty.className =
+            'chat-empty';
+
+        empty.textContent =
+            'Ask about the code or review the current project.';
+
+        container.appendChild(
+            empty
+        );
+
+        return;
+    }
+
+    messages.forEach(
+        function (message) {
+            var role =
+                message.role;
+
+            if (
+                role !== 'user' &&
+                role !== 'assistant'
+            ) {
+                return;
+            }
+
+            appendChatMessage(
+                message.content || '',
+                role === 'user'
+            );
+        }
+    );
+
+    ensureChatVisible();
+
+    scrollChatToBottom();
+}
+
+function clearChat() {
+    var container =
+        document.getElementById(
+            'answer-content'
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML =
+        '';
+
+    var empty =
+        document.createElement(
+            'div'
+        );
+
+    empty.className =
+        'chat-empty';
+
+    empty.textContent =
+        'Ask about the code or review the current project.';
+
+    container.appendChild(
+        empty
+    );
+}
+
+function scrollChatToBottom() {
+    var container =
+        document.getElementById(
+            'answer-content'
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.scrollTop =
+        container.scrollHeight;
+}
+
+window.appendChatMessage =
+    appendChatMessage;
+
+window.restoreChat =
+    restoreChat;
+
+window.clearChat =
+    clearChat;
+
+window.scrollChatToBottom =
+    scrollChatToBottom;
+
+// ------------------------------------------------------------
+// Monaco setup
+// ------------------------------------------------------------
+
+require(
+    ['vs/editor/editor.main'],
+    function () {
+        console.log(
+            '[code.js] monaco require callback entered'
+        );
+
+        window.monaco =
+            monaco;
+
+        window.editor =
+            monaco.editor.create(
+                document.getElementById(
+                    'editor-container'
+                ),
+                {
+                    value:
+                        '// Start typing code here...\n',
+
+                    language:
+                        'cpp',
+
+                    theme:
+                        'vs-dark',
+
+                    automaticLayout:
+                        true,
+
+                    fontFamily:
+                        "'JetBrains Mono', var(--font-mono), monospace",
+
+                    fontLigatures:
+                        true,
+
+                    fontSize:
+                        14,
+
+                    minimap: {
+                        enabled: true
+                    },
+
+                    scrollBeyondLastLine:
+                        false,
+
+                    roundedSelection:
+                        true,
+
+                    padding: {
+                        top: 12,
+                        bottom: 12
+                    },
+
+                    /*
+                     * Enable the gutter used by Monaco's native
+                     * diagnostics/markers.
+                     */
+                    glyphMargin:
+                        true,
+
+                    wordWrap:
+                        'off'
+                }
+            );
+
+        /*
+         * We no longer need the custom annotation overlay.
+         * Keep the element hidden from pointer interaction in
+         * case older HTML/CSS still contains it.
+         */
+        window.overlayEl =
+            document.getElementById(
+                'annotation-overlay'
+            );
+
+        if (window.overlayEl) {
+            window.overlayEl.style.display =
+                'none';
+        }
+
+        window.editor.onDidChangeModelContent(
+            function () {
+                notifyBackendCodeChange();
+
+                /*
+                 * Do not discard allAnnotations here.
+                 * The review belongs to the project, while the
+                 * text model may have been modified independently.
+                 *
+                 * The current file's markers are cleared because
+                 * their locations may no longer correspond to the
+                 * modified text.
+                 */
+                clearCurrentMonacoMarkers();
+            }
+        );
+
+        window.editor.onDidChangeModel(
+            function () {
+                /*
+                 * Reapply review markers when Monaco's model changes.
+                 */
+                applyCurrentFileAnnotations();
+            }
+        );
+
+        notifyBackendCodeChange();
+
+        clearChat();
+
+        console.log(
+            '[code.js] monaco editor created'
+        );
+
+        if (
+            window.currentFilePath
+        ) {
+            applyCurrentFileAnnotations();
         }
     }
-    annotationMarkers = [];
-    activeBubble = null;
-}
+);
 
-function updateAnnotationPositions() {
-    if (!window.editor || !overlayEl) return;
-    annotationMarkers.forEach(function (item) {
-        var line = item.annotation.startLine;
-        var top = window.editor.getTopForLineNumber(line) - window.editor.getScrollTop();
-        item.marker.style.top = top + 'px';
-    });
-}
+// ------------------------------------------------------------
+// Markdown
+// ------------------------------------------------------------
 
-function createMarker(annotation) {
-    if (!window.editor || !overlayEl) return;
-    var marker = document.createElement('div');
-    marker.className = 'annotation-marker ' + (annotation.severity || 'info');
-    marker.textContent = 'i';
-    var top = window.editor.getTopForLineNumber(annotation.startLine) - window.editor.getScrollTop();
-    marker.style.top = top + 'px';
-    marker.style.left = '10px';
-    marker.addEventListener('click', function (event) {
-        event.stopPropagation();
-        toggleBubble(marker, annotation);
-    });
-    overlayEl.appendChild(marker);
-    annotationMarkers.push({ marker: marker, annotation: annotation });
-}
-
-function toggleBubble(marker, annotation) {
-    if (activeBubble) {
-        activeBubble.remove();
-        activeBubble = null;
-    }
-    var bubble = document.createElement('div');
-    bubble.className = 'annotation-bubble visible';
-    var closeBtn = document.createElement('button');
-    closeBtn.className = 'annotation-close';
-    closeBtn.textContent = '×';
-    closeBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        bubble.remove();
-        activeBubble = null;
-    });
-    var text = document.createElement('div');
-    text.textContent = annotation.message || 'No message';
-    bubble.appendChild(closeBtn);
-    bubble.appendChild(text);
-    var markerRect = marker.getBoundingClientRect();
-    var overlayRect = overlayEl.getBoundingClientRect();
-    var left = markerRect.left - overlayRect.left + 25;
-    var top = markerRect.top - overlayRect.top;
-    bubble.style.left = left + 'px';
-    bubble.style.top = top + 'px';
-    overlayEl.appendChild(bubble);
-    activeBubble = bubble;
-    setTimeout(function () {
-        document.addEventListener('click', function closeHandler(e) {
-            if (activeBubble && !activeBubble.contains(e.target) && e.target !== marker) {
-                activeBubble.remove();
-                activeBubble = null;
-                document.removeEventListener('click', closeHandler);
-            }
-        });
-    }, 0);
-}
-
-function renderAnnotations(annotations) {
-    clearAnnotationOverlay();
-    if (!Array.isArray(annotations) || annotations.length === 0) return;
-    currentAnnotations = annotations;
-    annotations.forEach(function (ann) {
-        createMarker(ann);
-    });
-    updateAnnotationPositions();
-}
-
-// ----- Markdown renderer for the side panel -----
-function escapeHtml(str) {
+function escapeHtml(
+    str
+) {
     return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+        .replace(
+            /&/g,
+            '&amp;'
+        )
+        .replace(
+            /</g,
+            '&lt;'
+        )
+        .replace(
+            />/g,
+            '&gt;'
+        )
+        .replace(
+            /"/g,
+            '&quot;'
+        )
+        .replace(
+            /'/g,
+            '&#039;'
+        );
 }
 
-function markdownToHtml(text) {
-    var escaped = escapeHtml(text);
+function markdownToHtml(
+    text
+) {
+    var escaped =
+        escapeHtml(text);
+
     var codeBlocks = [];
-    var placeholder = '%%CODEBLOCK%%';
 
-    escaped = escaped.replace(/```([\s\S]*?)```/g, function (match, code) {
-        code = code.replace(/^[^\n]*\n?/, '');
-        var html = '<pre><code>' + code + '</code></pre>';
-        codeBlocks.push(html);
-        return placeholder + (codeBlocks.length - 1) + placeholder;
-    });
+    var placeholder =
+        '%%CODEBLOCK%%';
 
-    escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
-    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    escaped = escaped.replace(/\n/g, '<br>');
-    escaped = escaped.replace(/(<br>|^)- /g, '$1• ');
+    escaped =
+        escaped.replace(
+            /```([\s\S]*?)```/g,
+            function (
+                match,
+                code
+            ) {
+                code =
+                    code.replace(
+                        /^[^\n]*\n?/,
+                        ''
+                    );
 
-    for (var i = 0; i < codeBlocks.length; i++) {
-        escaped = escaped.split(placeholder + i + placeholder).join(codeBlocks[i]);
+                var html =
+                    '<pre><code>' +
+                    code +
+                    '</code></pre>';
+
+                codeBlocks.push(
+                    html
+                );
+
+                return (
+                    placeholder +
+                    (
+                        codeBlocks.length -
+                        1
+                    ) +
+                    placeholder
+                );
+            }
+        );
+
+    escaped =
+        escaped.replace(
+            /`([^`]+)`/g,
+            '<code>$1</code>'
+        );
+
+    escaped =
+        escaped.replace(
+            /\*\*([^*]+)\*\*/g,
+            '<strong>$1</strong>'
+        );
+
+    escaped =
+        escaped.replace(
+            /\*([^*]+)\*/g,
+            '<em>$1</em>'
+        );
+
+    escaped =
+        escaped.replace(
+            /\n/g,
+            '<br>'
+        );
+
+    escaped =
+        escaped.replace(
+            /(<br>|^)- /g,
+            '$1• '
+        );
+
+    for (
+        var i = 0;
+        i < codeBlocks.length;
+        ++i
+    ) {
+        escaped =
+            escaped
+                .split(
+                    placeholder +
+                    i +
+                    placeholder
+                )
+                .join(
+                    codeBlocks[i]
+                );
     }
+
     return escaped;
 }
 
-function showGeneralAnswer(text) {
-    var panel = document.getElementById('side-panel');
-    var content = document.getElementById('answer-content');
-    content.innerHTML = markdownToHtml(text || '');
-    panel.classList.add('open');
-}
+// ------------------------------------------------------------
+// WebChannel
+// ------------------------------------------------------------
 
-// ----- Monaco setup -----
-require(['vs/editor/editor.main'], function () {
-    console.log('[code.js] monaco require callback entered');
-    window.monaco = monaco;
-    window.editor = monaco.editor.create(document.getElementById('editor-container'), {
-        value: '// Start typing code here...\n',
-        language: 'cpp',
-        theme: 'vs-dark',
-        automaticLayout: true,
-        fontFamily: "'JetBrains Mono', var(--font-mono), monospace",
-        fontLigatures: true,
-        fontSize: 14,
-        minimap: { enabled: true },
-        scrollBeyondLastLine: false,
-        roundedSelection: true,
-        padding: { top: 12, bottom: 12 },
-        glyphMargin: false,
-        wordWrap: 'off'
-    });
-
-    overlayEl = document.getElementById('annotation-overlay');
-
-    window.editor.onDidChangeModelContent(function () {
-        notifyBackendCodeChange();
-        clearAnnotationOverlay();
-    });
-
-    window.editor.onDidScrollChange(function () {
-        updateAnnotationPositions();
-    });
-
-    notifyBackendCodeChange();
-    console.log('[code.js] monaco editor created');
-});
-
-// ----- WebChannel init -----
 function initWebChannel() {
-    if (typeof qt !== "undefined" && qt.webChannelTransport && typeof QWebChannel !== "undefined") {
-        new QWebChannel(qt.webChannelTransport, function (channel) {
-            window.backend = channel.objects.backend;
-            notifyBackendCodeChange();
-        });
-    } else {
-        setTimeout(initWebChannel, 50);
+    if (
+        typeof qt !== 'undefined' &&
+        qt.webChannelTransport &&
+        typeof QWebChannel !== 'undefined'
+    ) {
+        new QWebChannel(
+            qt.webChannelTransport,
+            function (channel) {
+                window.backend =
+                    channel.objects.backend;
+
+                window.project =
+                    channel.objects.project;
+
+                if (
+                    window.project &&
+                    window.project.projectTreeChanged
+                ) {
+                    window.project.projectTreeChanged.connect(
+                        function (tree) {
+                            window.setProjectTree(
+                                tree
+                            );
+                        }
+                    );
+                }
+
+                notifyBackendCodeChange();
+            }
+        );
+
+        return;
     }
+
+    setTimeout(
+        initWebChannel,
+        50
+    );
 }
 
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initWebChannel);
+if (
+    document.readyState ===
+    'loading'
+) {
+    document.addEventListener(
+        'DOMContentLoaded',
+        initWebChannel
+    );
 } else {
     initWebChannel();
 }
 
-// ----- Editor / exposed functions -----
-function setCode(code) {
+// ------------------------------------------------------------
+// Editor API
+// ------------------------------------------------------------
+
+function setCode(
+    code
+) {
     if (window.editor) {
-        window.editor.setValue(code);
+        window.editor.setValue(
+            code
+        );
     }
 }
 
 function getCode() {
-    return window.editor ? window.editor.getValue() : '';
+    return window.editor
+        ? window.editor.getValue()
+        : '';
 }
 
-window.getCode = getCode;
-window.setCode = setCode;
+window.getCode =
+    getCode;
 
-function setLanguage(lang) {
-    console.log('[code.js] setLanguage called with:', lang);
-    if (window.editor && window.monaco) {
-        window.monaco.editor.setModelLanguage(window.editor.getModel(), lang);
+window.setCode =
+    setCode;
+
+function setLanguage(
+    lang
+) {
+    console.log(
+        '[code.js] setLanguage called with:',
+        lang
+    );
+
+    if (
+        window.editor &&
+        window.monaco
+    ) {
+        window.monaco.editor.setModelLanguage(
+            window.editor.getModel(),
+            lang
+        );
     }
 }
 
-function setTheme(theme) {
-    console.log('[code.js] setTheme called with:', theme);
-    if (window.editor && window.monaco) {
-        window.editor.updateOptions({ theme: theme });
+function setTheme(
+    theme
+) {
+    console.log(
+        '[code.js] setTheme called with:',
+        theme
+    );
+
+    if (
+        window.monaco
+    ) {
+        window.monaco.editor.setTheme(
+            theme
+        );
     }
 }
 
-window.setEditorCode = function (code, lang) {
-    console.log('[code.js] setEditorCode called with code length:', code ? code.length : 0, 'lang:', lang);
-    if (window.editor) {
-        var state = window.editor.saveViewState();
-        window.editor.setValue(code);
-        if (state) {
-            window.editor.restoreViewState(state);
-        }
-        if (lang && lang.trim() !== '') {
-            setLanguage(lang);
-        }
-        clearAnnotationOverlay();
-    }
-};
+window.setEditorCode =
+    function (
+        code,
+        lang
+    ) {
+        console.log(
+            '[code.js] setEditorCode called with code length:',
+            code ? code.length : 0,
+            'lang:',
+            lang
+        );
 
-window.appendCodeToEditor = function (code) {
-    console.log('[code.js] appendCodeToEditor called with code length:', code ? code.length : 0);
-    if (window.editor) {
-        var model = window.editor.getModel();
-        var lastLine = model.getLineCount();
-        var lastColumn = model.getLineMaxColumn(lastLine);
-        window.editor.executeEdits("backend", [{
-            range: new window.monaco.Range(lastLine, lastColumn, lastLine, lastColumn),
-            text: code,
-            forceMoveMarkers: true
-        }]);
-    }
-};
-
-// ----- Legacy Range Edits -----
-window.applyEdits = function (edits) {
-    console.log('[code.js] applyEdits called');
-    if (!window.editor || !window.monaco) return;
-
-    var parsed = edits;
-    if (typeof edits === 'string') {
-        try {
-            parsed = JSON.parse(edits);
-        } catch (e) {
-            console.error('[code.js] applyEdits JSON.parse failed:', e);
+        if (!window.editor) {
             return;
         }
-    }
-    if (!Array.isArray(parsed) || parsed.length === 0) return;
 
-    var model = window.editor.getModel();
-    var totalLines = model.getLineCount();
-    var operations = [];
+        var state =
+            window.editor.saveViewState();
 
-    for (var i = 0; i < parsed.length; i++) {
-        var op = parsed[i];
-        var startLine = Number(op.startLine);
-        var startColumn = Number(op.startColumn);
-        var endLine = Number(op.endLine);
-        var endColumn = Number(op.endColumn);
+        /*
+         * Clear markers before replacing the model text.
+         * After the content change, setCurrentFile/applyCurrentFileAnnotations
+         * will restore the appropriate review markers.
+         */
+        clearCurrentMonacoMarkers();
 
-        if (!isFinite(startLine) || !isFinite(startColumn) || !isFinite(endLine) || !isFinite(endColumn)) continue;
-        if (startLine < 1 || startColumn < 1 || endLine < 1 || endColumn < 1) continue;
-        if (startLine > endLine || (startLine === endLine && startColumn > endColumn)) continue;
+        window.editor.setValue(
+            code
+        );
 
-        var text = (op.text !== undefined && op.text !== null) ? String(op.text) : '';
-        operations.push({
-            range: new window.monaco.Range(startLine, startColumn, endLine, endColumn),
-            text: text,
-            forceMoveMarkers: true
-        });
-    }
-
-    operations.sort(function (a, b) {
-        if (a.range.startLineNumber !== b.range.startLineNumber) {
-            return b.range.startLineNumber - a.range.startLineNumber;
+        if (state) {
+            window.editor.restoreViewState(
+                state
+            );
         }
-        return b.range.startColumn - a.range.startColumn;
-    });
 
-    if (operations.length > 0) {
-        try {
-            window.editor.executeEdits('backend', operations);
-            clearAnnotationOverlay();
-            notifyBackendCodeChange();
-        } catch (e) {
-            console.error('[code.js] executeEdits failed:', e);
+        if (
+            lang &&
+            lang.trim() !== ''
+        ) {
+            setLanguage(
+                lang
+            );
         }
-    }
-};
 
-// ----- Aider-style SEARCH/REPLACE engine -----
-// ----- Aider-style SEARCH/REPLACE engine -----
-// ----- Aider-style SEARCH/REPLACE engine -----
-// ----- Aider-style SEARCH/REPLACE engine -----
-window.applySearchReplace = function (blocks) {
-    console.log('[code.js] applySearchReplace called');
-    if (!window.editor || !window.monaco) {
-        console.error('[code.js] Editor not initialized');
-        return false;
-    }
+        /*
+         * Setting the value fires onDidChangeModelContent,
+         * so wait until Monaco has completed the update before
+         * restoring the current file's annotations.
+         */
+        setTimeout(
+            function () {
+                applyCurrentFileAnnotations();
+            },
+            0
+        );
+    };
 
-    var parsed = blocks;
-    if (typeof blocks === 'string') {
-        try {
-            parsed = JSON.parse(blocks);
-        } catch (e) {
-            console.error('[code.js] applySearchReplace JSON.parse failed:', e);
-            return false;
+window.appendCodeToEditor =
+    function (
+        code
+    ) {
+        console.log(
+            '[code.js] appendCodeToEditor called with code length:',
+            code ? code.length : 0
+        );
+
+        if (!window.editor) {
+            return;
         }
-    }
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-        console.warn('[code.js] No blocks to apply');
-        return false;
-    }
 
-    var model = window.editor.getModel();
-    var fullText = model.getValue();
-    var operations = [];
-    var failed = [];
-    var successCount = 0;
+        var model =
+            window.editor.getModel();
 
-    // Normalize helpers
-    function normalizeLineEndings(text) {
-        return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    }
-    function normalizeTrailingWhitespace(text) {
-        return text.split('\n').map(l => l.replace(/\s+$/, '')).join('\n');
-    }
+        var lastLine =
+            model.getLineCount();
 
-    for (var i = 0; i < parsed.length; i++) {
-        var block = parsed[i];
-        var search = block.search != null ? String(block.search) : '';
-        var replace = block.replace != null ? String(block.replace) : '';
+        var lastColumn =
+            model.getLineMaxColumn(
+                lastLine
+            );
 
-        // Handle empty search as insertion at beginning
-        if (search === '') {
-            if (replace === '') {
-                console.warn('[code.js] Block', i, ': both search and replace empty, skipping');
-                failed.push({ index: i, reason: 'empty search and replace' });
+        window.editor.executeEdits(
+            'backend',
+            [{
+                range:
+                    new window.monaco.Range(
+                        lastLine,
+                        lastColumn,
+                        lastLine,
+                        lastColumn
+                    ),
+
+                text:
+                code,
+
+                forceMoveMarkers:
+                    true
+            }]
+        );
+
+        notifyBackendCodeChange();
+    };
+
+// ------------------------------------------------------------
+// Range edits
+// ------------------------------------------------------------
+
+window.applyEdits =
+    function (
+        edits
+    ) {
+        if (
+            !window.editor ||
+            !window.monaco
+        ) {
+            return;
+        }
+
+        var parsed =
+            edits;
+
+        if (
+            typeof edits ===
+            'string'
+        ) {
+            try {
+                parsed =
+                    JSON.parse(
+                        edits
+                    );
+            } catch (error) {
+                console.error(
+                    '[code.js] applyEdits JSON.parse failed:',
+                    error
+                );
+
+                return;
+            }
+        }
+
+        if (
+            !Array.isArray(parsed) ||
+            parsed.length === 0
+        ) {
+            return;
+        }
+
+        var operations = [];
+
+        for (
+            var i = 0;
+            i < parsed.length;
+            ++i
+        ) {
+            var operation =
+                parsed[i];
+
+            var startLine =
+                Number(
+                    operation.startLine
+                );
+
+            var startColumn =
+                Number(
+                    operation.startColumn
+                );
+
+            var endLine =
+                Number(
+                    operation.endLine
+                );
+
+            var endColumn =
+                Number(
+                    operation.endColumn
+                );
+
+            if (
+                !isFinite(startLine) ||
+                !isFinite(startColumn) ||
+                !isFinite(endLine) ||
+                !isFinite(endColumn)
+            ) {
                 continue;
             }
-            // Insert at position 0
+
+            if (
+                startLine < 1 ||
+                startColumn < 1 ||
+                endLine < 1 ||
+                endColumn < 1
+            ) {
+                continue;
+            }
+
+            if (
+                startLine > endLine ||
+                (
+                    startLine === endLine &&
+                    startColumn > endColumn
+                )
+            ) {
+                continue;
+            }
+
             operations.push({
-                range: new window.monaco.Range(1, 1, 1, 1),
-                text: replace,
-                forceMoveMarkers: true,
-                originalIndex: i
+                range:
+                    new window.monaco.Range(
+                        startLine,
+                        startColumn,
+                        endLine,
+                        endColumn
+                    ),
+
+                text:
+                    operation.text !== undefined &&
+                    operation.text !== null
+                        ? String(
+                            operation.text
+                        )
+                        : '',
+
+                forceMoveMarkers:
+                    true
             });
-            successCount++;
-            console.log('[code.js] Block', i, ': inserted at beginning');
-            continue;
         }
 
-        var searchIdx = -1;
-        var matchedText = '';
-
-        // Strategy 1: Exact match
-        searchIdx = fullText.indexOf(search);
-        if (searchIdx !== -1) {
-            matchedText = search;
-            console.log('[code.js] Block', i, ': exact match at', searchIdx);
-        }
-
-        // Strategy 2: Normalized line endings
-        if (searchIdx === -1) {
-            var normFull = normalizeLineEndings(fullText);
-            var normSearch = normalizeLineEndings(search);
-            var normIdx = normFull.indexOf(normSearch);
-            if (normIdx !== -1) {
-                // Map back to original indices (approximation, safe for common cases)
-                searchIdx = fullText.indexOf(normSearch);
-                if (searchIdx !== -1) {
-                    matchedText = normSearch;
+        operations.sort(
+            function (
+                a,
+                b
+            ) {
+                if (
+                    a.range.startLineNumber !==
+                    b.range.startLineNumber
+                ) {
+                    return (
+                        b.range.startLineNumber -
+                        a.range.startLineNumber
+                    );
                 }
-                console.log('[code.js] Block', i, ': matched after line-ending normalization');
+
+                return (
+                    b.range.startColumn -
+                    a.range.startColumn
+                );
+            }
+        );
+
+        if (
+            operations.length > 0
+        ) {
+            try {
+                window.editor.executeEdits(
+                    'backend',
+                    operations
+                );
+
+                clearCurrentMonacoMarkers();
+
+                notifyBackendCodeChange();
+            } catch (error) {
+                console.error(
+                    '[code.js] executeEdits failed:',
+                    error
+                );
             }
         }
+    };
 
-        // Strategy 3: Normalized trailing whitespace
-        if (searchIdx === -1) {
-            var normFullWS = normalizeTrailingWhitespace(normalizeLineEndings(fullText));
-            var normSearchWS = normalizeTrailingWhitespace(normalizeLineEndings(search));
-            var wsIdx = normFullWS.indexOf(normSearchWS);
-            if (wsIdx !== -1) {
-                // Try to find corresponding position in original
-                searchIdx = fullText.indexOf(search.trim());
-                if (searchIdx !== -1) {
-                    matchedText = search.trim();
-                }
-                console.log('[code.js] Block', i, ': matched after whitespace normalization');
-            }
-        }
+// ------------------------------------------------------------
+// SEARCH / REPLACE
+// ------------------------------------------------------------
 
-        if (searchIdx === -1) {
-            console.error('[code.js] Block', i, ': search text not found');
-            console.error('[code.js] Search text:', JSON.stringify(search.substring(0, 200)));
-            failed.push({ index: i, reason: 'search not found' });
-            continue;
-        }
+window.applySearchReplace =
+    function (
+        blocks
+    ) {
+        console.log(
+            '[code.js] applySearchReplace called'
+        );
 
-        // Calculate range
-        var before = fullText.substring(0, searchIdx);
-        var startLine = (before.match(/\n/g) || []).length + 1;
-        var lastNl = before.lastIndexOf('\n');
-        var startColumn = (lastNl === -1 ? before.length : before.length - lastNl - 1) + 1;
+        if (
+            !window.editor ||
+            !window.monaco
+        ) {
+            console.error(
+                '[code.js] Editor not initialized'
+            );
 
-        var endOffset = searchIdx + matchedText.length;
-        var afterStart = fullText.substring(0, endOffset);
-        var endLine = (afterStart.match(/\n/g) || []).length + 1;
-        var lastNlEnd = afterStart.lastIndexOf('\n');
-        var endColumn = (lastNlEnd === -1 ? afterStart.length : afterStart.length - lastNlEnd - 1) + 1;
-
-        operations.push({
-            range: new window.monaco.Range(startLine, startColumn, endLine, endColumn),
-            text: replace,
-            forceMoveMarkers: true,
-            originalIndex: i
-        });
-        successCount++;
-        console.log('[code.js] Block', i, ': applied');
-    }
-
-    // Sort operations bottom-up
-    operations.sort(function (a, b) {
-        if (a.range.startLineNumber !== b.range.startLineNumber) {
-            return b.range.startLineNumber - a.range.startLineNumber;
-        }
-        return b.range.startColumn - a.range.startColumn;
-    });
-
-    if (operations.length > 0) {
-        try {
-            window.editor.executeEdits('backend-sr', operations);
-            clearAnnotationOverlay();
-            notifyBackendCodeChange();
-            console.log('[code.js] Applied', operations.length, 'edits');
-        } catch (e) {
-            console.error('[code.js] executeEdits failed:', e);
             return false;
         }
-    }
 
-    if (failed.length > 0) {
-        console.warn('[code.js]', failed.length, 'blocks failed');
-        return false;
-    }
-    return true;
-};
-window.clearAnnotations = function () {
-    clearAnnotationOverlay();
-};
+        var parsed =
+            blocks;
 
-window.setAnnotations = function (annotations) {
-    console.log('[code.js] setAnnotations called');
-    if (!window.editor || !overlayEl) return;
+        if (
+            typeof blocks ===
+            'string'
+        ) {
+            try {
+                parsed =
+                    JSON.parse(
+                        blocks
+                    );
+            } catch (error) {
+                console.error(
+                    '[code.js] applySearchReplace JSON.parse failed:',
+                    error
+                );
 
-    var parsedAnnotations = annotations;
-    if (typeof annotations === 'string') {
-        try {
-            parsedAnnotations = JSON.parse(annotations);
-        } catch (e) {
-            console.error('[code.js] JSON.parse failed:', e);
-            return;
+                return false;
+            }
         }
-    }
-    if (!Array.isArray(parsedAnnotations)) return;
-    renderAnnotations(parsedAnnotations);
-};
 
-window.showAnswer = function (text) {
-    showGeneralAnswer(text);
-};
+        if (
+            !Array.isArray(parsed) ||
+            parsed.length === 0
+        ) {
+            console.warn(
+                '[code.js] No blocks to apply'
+            );
+
+            return false;
+        }
+
+        var model =
+            window.editor.getModel();
+
+        var fullText =
+            model.getValue();
+
+        var operations = [];
+        var failed = [];
+        var successCount = 0;
+
+        function normalizeLineEndings(
+            text
+        ) {
+            return text
+                .replace(
+                    /\r\n/g,
+                    '\n'
+                )
+                .replace(
+                    /\r/g,
+                    '\n'
+                );
+        }
+
+        function normalizeTrailingWhitespace(
+            text
+        ) {
+            return text
+                .split('\n')
+                .map(
+                    function (line) {
+                        return line.replace(
+                            /\s+$/,
+                            ''
+                        );
+                    }
+                )
+                .join('\n');
+        }
+
+        for (
+            var i = 0;
+            i < parsed.length;
+            ++i
+        ) {
+            var block =
+                parsed[i];
+
+            var search =
+                block.search != null
+                    ? String(
+                        block.search
+                    )
+                    : '';
+
+            var replace =
+                block.replace != null
+                    ? String(
+                        block.replace
+                    )
+                    : '';
+
+            if (
+                search === ''
+            ) {
+                if (
+                    replace === ''
+                ) {
+                    failed.push({
+                        index:
+                        i,
+                        reason:
+                            'empty search and replace'
+                    });
+
+                    continue;
+                }
+
+                operations.push({
+                    range:
+                        new window.monaco.Range(
+                            1,
+                            1,
+                            1,
+                            1
+                        ),
+
+                    text:
+                    replace,
+
+                    forceMoveMarkers:
+                        true
+                });
+
+                successCount++;
+
+                continue;
+            }
+
+            var searchIdx =
+                -1;
+
+            var matchedText =
+                '';
+
+            searchIdx =
+                fullText.indexOf(
+                    search
+                );
+
+            if (
+                searchIdx !==
+                -1
+            ) {
+                matchedText =
+                    search;
+            }
+
+            if (
+                searchIdx ===
+                -1
+            ) {
+                var normFull =
+                    normalizeLineEndings(
+                        fullText
+                    );
+
+                var normSearch =
+                    normalizeLineEndings(
+                        search
+                    );
+
+                var normIdx =
+                    normFull.indexOf(
+                        normSearch
+                    );
+
+                if (
+                    normIdx !==
+                    -1
+                ) {
+                    searchIdx =
+                        fullText.indexOf(
+                            normSearch
+                        );
+
+                    if (
+                        searchIdx !==
+                        -1
+                    ) {
+                        matchedText =
+                            normSearch;
+                    }
+                }
+            }
+
+            if (
+                searchIdx ===
+                -1
+            ) {
+                var normFullWS =
+                    normalizeTrailingWhitespace(
+                        normalizeLineEndings(
+                            fullText
+                        )
+                    );
+
+                var normSearchWS =
+                    normalizeTrailingWhitespace(
+                        normalizeLineEndings(
+                            search
+                        )
+                    );
+
+                var wsIdx =
+                    normFullWS.indexOf(
+                        normSearchWS
+                    );
+
+                if (
+                    wsIdx !==
+                    -1
+                ) {
+                    searchIdx =
+                        fullText.indexOf(
+                            search.trim()
+                        );
+
+                    if (
+                        searchIdx !==
+                        -1
+                    ) {
+                        matchedText =
+                            search.trim();
+                    }
+                }
+            }
+
+            if (
+                searchIdx ===
+                -1
+            ) {
+                failed.push({
+                    index:
+                    i,
+                    reason:
+                        'search not found'
+                });
+
+                continue;
+            }
+
+            var before =
+                fullText.substring(
+                    0,
+                    searchIdx
+                );
+
+            var startLine =
+                (
+                    before.match(
+                        /\n/g
+                    ) || []
+                ).length + 1;
+
+            var lastNl =
+                before.lastIndexOf(
+                    '\n'
+                );
+
+            var startColumn =
+                (
+                    lastNl === -1
+                        ? before.length
+                        : before.length -
+                        lastNl -
+                        1
+                ) + 1;
+
+            var endOffset =
+                searchIdx +
+                matchedText.length;
+
+            var throughEnd =
+                fullText.substring(
+                    0,
+                    endOffset
+                );
+
+            var endLine =
+                (
+                    throughEnd.match(
+                        /\n/g
+                    ) || []
+                ).length + 1;
+
+            var lastNlEnd =
+                throughEnd.lastIndexOf(
+                    '\n'
+                );
+
+            var endColumn =
+                (
+                    lastNlEnd === -1
+                        ? throughEnd.length
+                        : throughEnd.length -
+                        lastNlEnd -
+                        1
+                ) + 1;
+
+            operations.push({
+                range:
+                    new window.monaco.Range(
+                        startLine,
+                        startColumn,
+                        endLine,
+                        endColumn
+                    ),
+
+                text:
+                replace,
+
+                forceMoveMarkers:
+                    true
+            });
+
+            successCount++;
+        }
+
+        operations.sort(
+            function (
+                a,
+                b
+            ) {
+                if (
+                    a.range.startLineNumber !==
+                    b.range.startLineNumber
+                ) {
+                    return (
+                        b.range.startLineNumber -
+                        a.range.startLineNumber
+                    );
+                }
+
+                return (
+                    b.range.startColumn -
+                    a.range.startColumn
+                );
+            }
+        );
+
+        if (
+            operations.length > 0
+        ) {
+            try {
+                window.editor.executeEdits(
+                    'backend-sr',
+                    operations
+                );
+
+                clearCurrentMonacoMarkers();
+
+                notifyBackendCodeChange();
+
+                console.log(
+                    '[code.js] Applied',
+                    operations.length,
+                    'edits'
+                );
+            } catch (error) {
+                console.error(
+                    '[code.js] executeEdits failed:',
+                    error
+                );
+
+                return false;
+            }
+        }
+
+        if (
+            failed.length > 0
+        ) {
+            console.warn(
+                '[code.js]',
+                failed.length,
+                'blocks failed'
+            );
+
+            return false;
+        }
+
+        return successCount > 0;
+    };
+
+// ------------------------------------------------------------
+// Answer
+// ------------------------------------------------------------
+
+window.showAnswer =
+    function (text) {
+        ensureChatVisible();
+        scrollChatToBottom();
+    };
