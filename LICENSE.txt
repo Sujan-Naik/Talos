@@ -1,0 +1,15 @@
+Copyright (c) 2026 Sujan Naik
+
+PERSONAL USE LICENSE
+
+You may download, install, and run this software for your own personal, non-commercial use.
+
+You may not sell, redistribute, sublicense, publish, or modify the software without prior written permission.
+
+You may not use this software or its source code for training, fine-tuning, evaluating, benchmarking, or otherwise developing artificial intelligence or machine-learning systems, including large language models, nor may you include it in datasets or automated AI/ML scraping or ingestion.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE COPYRIGHT HOLDER SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM OR RELATED TO THE USE OF THE SOFTWARE.
+
+All rights not expressly granted are reserved.
+
+For permission beyond this license, contact: sujannaik047@gmail.com

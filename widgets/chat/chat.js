@@ -3,35 +3,54 @@ window.ttsEnabled = false;
 window.ttsVoice = 'af_bella';
 window.ttsVoices = [];
 
-window.updateHoleRect = function(x, y, width, height, viewWidth) {
-    const spacer = document.getElementById('hole-spacer');
+window.updateHoleRect = function(x, y, width, height, viewWidth, viewHeight) {
     const border = document.getElementById('hole-border');
+    const spacer = document.getElementById('hole-spacer');
+    const wrapper = document.getElementById('root-wrapper');
 
-    if (!spacer || !border) return;
+    if (!border || !wrapper) return;
 
     if (width <= 0 || height <= 0) {
-        spacer.style.display = 'none';
         border.style.display = 'none';
+
+        if (spacer) {
+            spacer.style.display = 'none';
+            spacer.style.width = '0px';
+            spacer.style.height = '0px';
+        }
+
         return;
     }
 
-    const isRightSide = (x + width / 2) > (viewWidth / 2);
-    const floatDir = isRightSide ? 'right' : 'left';
+    const wrapperRect = wrapper.getBoundingClientRect();
 
-    spacer.style.display = 'block';
-    spacer.style.float = floatDir;
-    spacer.style.width = width + 'px';
-    spacer.style.height = height + 'px';
-    spacer.style.shapeOutside = 'inset(0px 0px 0px 0px)';
-    spacer.style.marginTop = Math.max(0, y) + 'px';
+    const sourceWidth = Number(viewWidth);
+    const sourceHeight = Number(viewHeight);
+
+    const scaleX =
+        sourceWidth > 0
+            ? wrapperRect.width / sourceWidth
+            : 1;
+
+    const scaleY =
+        sourceHeight > 0
+            ? wrapperRect.height / sourceHeight
+            : 1;
 
     border.style.display = 'block';
-    border.style.left = x + 'px';
-    border.style.top = y + 'px';
-    border.style.width = width + 'px';
-    border.style.height = height + 'px';
+    border.style.position = 'absolute';
+    border.style.left = `${x * scaleX}px`;
+    border.style.top = `${y * scaleY}px`;
+    border.style.width = `${width * scaleX}px`;
+    border.style.height = `${height * scaleY}px`;
+    border.style.boxSizing = 'border-box';
 
-    scrollToBottom();
+    if (spacer) {
+        spacer.style.display = 'none';
+        spacer.style.width = '0px';
+        spacer.style.height = '0px';
+        spacer.style.margin = '0';
+    }
 };
 
 function setInputValue(text) {
@@ -152,12 +171,15 @@ function appendToLastAiMessage(deltaText) {
     if (!messagesDiv) return;
 
     let aiRows = messagesDiv.getElementsByClassName('message-row ai');
+
     if (aiRows.length === 0) {
         const row = document.createElement('div');
         row.className = 'message-row ai';
+
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
         bubble.dataset.rawText = '';
+
         row.appendChild(bubble);
         messagesDiv.appendChild(row);
         aiRows = messagesDiv.getElementsByClassName('message-row ai');
@@ -165,23 +187,31 @@ function appendToLastAiMessage(deltaText) {
 
     const lastAiRow = aiRows[aiRows.length - 1];
     const bubble = lastAiRow.querySelector('.bubble');
+
     if (bubble) {
         if (!bubble.dataset.rawText) {
             bubble.dataset.rawText = bubble.textContent || "";
         }
+
         bubble.dataset.rawText += deltaText;
         bubble.innerHTML = marked.parse(bubble.dataset.rawText);
+
         bubble.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);
         });
 
         attachCopyUtils(bubble);
 
-        let msgCopyBtn = lastAiRow.querySelector('.msg-copy-btn');
+        const msgCopyBtn = lastAiRow.querySelector('.msg-copy-btn');
+
         if (msgCopyBtn) {
-            msgCopyBtn.replaceWith(createMsgCopyButton(bubble.dataset.rawText));
+            msgCopyBtn.replaceWith(
+                createMsgCopyButton(bubble.dataset.rawText)
+            );
         } else {
-            lastAiRow.appendChild(createMsgCopyButton(bubble.dataset.rawText));
+            lastAiRow.appendChild(
+                createMsgCopyButton(bubble.dataset.rawText)
+            );
         }
     }
 
@@ -196,13 +226,17 @@ function scrollToBottom() {
 }
 
 function autoResizeInput(textarea) {
-    if (document.getElementById('root-wrapper').classList.contains('expanded-input')) return;
+    const wrapper = document.getElementById('root-wrapper');
+
+    if (wrapper && wrapper.classList.contains('expanded-input')) return;
+
     textarea.style.height = 'auto';
     textarea.style.height = Math.min(textarea.scrollHeight, 250) + 'px';
 }
 
 function setTtsUiState(enabled) {
     window.ttsEnabled = !!enabled;
+
     const btn = document.getElementById('tts-btn');
     if (!btn) return;
 
@@ -219,7 +253,10 @@ function setTtsUiState(enabled) {
 }
 
 function toggleTTS(forcedState) {
-    const nextState = typeof forcedState === 'boolean' ? forcedState : !window.ttsEnabled;
+    const nextState = typeof forcedState === 'boolean'
+        ? forcedState
+        : !window.ttsEnabled;
+
     setTtsUiState(nextState);
 
     if (window.backend && typeof window.backend.onTtsToggled === 'function') {
@@ -229,20 +266,60 @@ function toggleTTS(forcedState) {
 
 function formatVoiceName(voiceId) {
     const names = {
-        af_alloy: 'Alloy', af_aoede: 'Aoede', af_bella: 'Bella', af_heart: 'Heart',
-        af_jessica: 'Jessica', af_kore: 'Kore', af_nicole: 'Nicole', af_nova: 'Nova',
-        af_river: 'River', af_sarah: 'Sarah', af_sky: 'Sky',
-        am_adam: 'Adam', am_echo: 'Echo', am_eric: 'Eric', am_fenrir: 'Fenrir',
-        am_liam: 'Liam', am_michael: 'Michael', am_onyx: 'Onyx', am_puck: 'Puck', am_santa: 'Santa',
-        bf_alice: 'Alice', bf_emma: 'Emma', bf_isabella: 'Isabella', bf_lily: 'Lily',
-        bm_daniel: 'Daniel', bm_fable: 'Fable', bm_george: 'George', bm_lewis: 'Lewis',
-        ef_dora: 'Dora', em_alex: 'Alex', em_santa: 'Santa', ff_siwis: 'Siwis',
-        hf_alpha: 'Alpha', hf_beta: 'Beta', hm_omega: 'Omega', hm_psi: 'Psi',
-        if_sara: 'Sara', im_nicola: 'Nicola',
-        jf_alpha: 'Alpha', jf_gongitsune: 'Gongitsune', jf_nezumi: 'Nezumi', jf_tebukuro: 'Tebukuro', jm_kumo: 'Kumo',
-        pf_dora: 'Dora', pm_alex: 'Alex', pm_santa: 'Santa',
-        zf_xiaobei: 'Xiaobei', zf_xiaoni: 'Xiaoni', zf_xiaoxiao: 'Xiaoxiao', zf_xiaoyi: 'Xiaoyi',
-        zm_yunjian: 'Yunjian', zm_yunxi: 'Yunxi', zm_yunxia: 'Yunxia', zm_yunyang: 'Yunyang'
+        af_alloy: 'Alloy',
+        af_aoede: 'Aoede',
+        af_bella: 'Bella',
+        af_heart: 'Heart',
+        af_jessica: 'Jessica',
+        af_kore: 'Kore',
+        af_nicole: 'Nicole',
+        af_nova: 'Nova',
+        af_river: 'River',
+        af_sarah: 'Sarah',
+        af_sky: 'Sky',
+        am_adam: 'Adam',
+        am_echo: 'Echo',
+        am_eric: 'Eric',
+        am_fenrir: 'Fenrir',
+        am_liam: 'Liam',
+        am_michael: 'Michael',
+        am_onyx: 'Onyx',
+        am_puck: 'Puck',
+        am_santa: 'Santa',
+        bf_alice: 'Alice',
+        bf_emma: 'Emma',
+        bf_isabella: 'Isabella',
+        bf_lily: 'Lily',
+        bm_daniel: 'Daniel',
+        bm_fable: 'Fable',
+        bm_george: 'George',
+        bm_lewis: 'Lewis',
+        ef_dora: 'Dora',
+        em_alex: 'Alex',
+        em_santa: 'Santa',
+        ff_siwis: 'Siwis',
+        hf_alpha: 'Alpha',
+        hf_beta: 'Beta',
+        hm_omega: 'Omega',
+        hm_psi: 'Psi',
+        if_sara: 'Sara',
+        im_nicola: 'Nicola',
+        jf_alpha: 'Alpha',
+        jf_gongitsune: 'Gongitsune',
+        jf_nezumi: 'Nezumi',
+        jf_tebukuro: 'Tebukuro',
+        jm_kumo: 'Kumo',
+        pf_dora: 'Dora',
+        pm_alex: 'Alex',
+        pm_santa: 'Santa',
+        zf_xiaobei: 'Xiaobei',
+        zf_xiaoni: 'Xiaoni',
+        zf_xiaoxiao: 'Xiaoxiao',
+        zf_xiaoyi: 'Xiaoyi',
+        zm_yunjian: 'Yunjian',
+        zm_yunxi: 'Yunxi',
+        zm_yunxia: 'Yunxia',
+        zm_yunyang: 'Yunyang'
     };
 
     return names[voiceId] ? `${names[voiceId]} (${voiceId})` : voiceId;
@@ -274,12 +351,15 @@ function populateVoiceSelector(voices) {
     if (!select) return;
 
     const previous = window.ttsVoice;
-    const uniqueVoices = [...new Set((voices || []).filter(v => typeof v === 'string' && v.trim()))];
-    window.ttsVoices = uniqueVoices;
+    const uniqueVoices = [...new Set(
+        (voices || []).filter(v => typeof v === 'string' && v.trim())
+    )];
 
+    window.ttsVoices = uniqueVoices;
     select.innerHTML = '';
 
     const groups = new Map();
+
     uniqueVoices.forEach((voiceId) => {
         const group = groupForVoice(voiceId);
         if (!groups.has(group)) groups.set(group, []);
@@ -289,12 +369,14 @@ function populateVoiceSelector(voices) {
     [...groups.entries()].forEach(([groupName, ids]) => {
         const optgroup = document.createElement('optgroup');
         optgroup.label = groupName;
+
         ids.sort().forEach((voiceId) => {
             const option = document.createElement('option');
             option.value = voiceId;
             option.textContent = formatVoiceName(voiceId);
             optgroup.appendChild(option);
         });
+
         select.appendChild(optgroup);
     });
 
@@ -364,8 +446,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     expandBtn.addEventListener('click', function() {
         wrapper.classList.toggle('expanded-input');
+
         const isExpanded = wrapper.classList.contains('expanded-input');
         expandBtn.textContent = isExpanded ? '⤡' : '⤢';
+
         if (!isExpanded) {
             autoResizeInput(input);
         } else {
@@ -374,22 +458,27 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     sendBtn.addEventListener('click', sendMessage);
+
     captureBtn.addEventListener('click', function() {
         if (window.backend && typeof window.backend.requestCapture === 'function') {
             window.backend.requestCapture();
         }
     });
+
     micBtn.addEventListener('click', function() {
         if (window.backend && typeof window.backend.requestToggleMic === 'function') {
             window.backend.requestToggleMic();
         }
     });
+
     ttsBtn.addEventListener('click', function() {
         toggleTTS();
     });
+
     ttsSettingsBtn.addEventListener('click', toggleTtsSettings);
     ttsVoiceApplyBtn.addEventListener('click', applySelectedVoice);
     ttsVoiceCustomBtn.addEventListener('click', applyCustomVoice);
+
     ttsVoiceCustom.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -398,9 +487,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || wrapper.classList.contains('expanded-input'))) {
+        if (
+            e.key === 'Enter' &&
+            (e.ctrlKey || e.metaKey || wrapper.classList.contains('expanded-input'))
+        ) {
             return;
         }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
@@ -408,15 +501,17 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (typeof QWebChannel !== "undefined") {
-        new QWebChannel(qt.webChannelTransport, function (channel) {
+        new QWebChannel(qt.webChannelTransport, function(channel) {
             window.backend = channel.objects.backend;
 
             if (typeof window.backend.ttsEnabled !== 'undefined') {
                 setTtsUiState(!!window.backend.ttsEnabled);
             }
+
             if (typeof window.backend.ttsVoice === 'string') {
                 window.ttsVoice = window.backend.ttsVoice;
             }
+
             if (Array.isArray(window.backend.ttsVoices)) {
                 populateVoiceSelector(window.backend.ttsVoices);
             }
@@ -430,10 +525,16 @@ document.addEventListener("DOMContentLoaded", function () {
             if (window.backend.ttsVoiceChanged) {
                 window.backend.ttsVoiceChanged.connect(function(voice) {
                     window.ttsVoice = voice;
+
                     const select = document.getElementById('tts-voice-select');
-                    if (select && [...select.options].some(o => o.value === voice)) {
+
+                    if (
+                        select &&
+                        [...select.options].some(o => o.value === voice)
+                    ) {
                         select.value = voice;
                     }
+
                     localStorage.setItem('talos.ttsVoice', voice);
                 });
             }
@@ -445,7 +546,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const savedVoice = localStorage.getItem('talos.ttsVoice');
-            if (savedVoice && typeof window.backend.setTtsVoice === 'function') {
+
+            if (
+                savedVoice &&
+                typeof window.backend.setTtsVoice === 'function'
+            ) {
                 window.ttsVoice = savedVoice;
                 window.backend.setTtsVoice(savedVoice);
             }

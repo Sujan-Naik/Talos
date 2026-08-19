@@ -14,10 +14,48 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.3.0/lib/marked.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
     <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body {
+            min-width: 0;
+            min-height: 0;
+        }
+
+        #root-wrapper {
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            box-sizing: border-box;
+        }
+
+        #hole-border {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        #hole-spacer {
+            box-sizing: border-box;
+            margin: 0 !important;
+            padding: 0;
+        }
+    </style>
 </head>
 <body class="bg-gray-900">
 <div id="root-wrapper" class="flex flex-col w-full h-full relative overflow-hidden">
-    <div id="hole-border" class="absolute hidden pointer-events-none border-2 border-blue-500 bg-transparent z-50">
+
+    <div id="hole-border"
+         class="absolute hidden pointer-events-none border-2 border-blue-500 bg-transparent z-50">
         <div class="handle handle-tl"></div>
         <div class="handle handle-tr"></div>
         <div class="handle handle-bl"></div>
@@ -25,7 +63,7 @@
     </div>
 
     <div id="chat-container" class="flex-1 w-full p-3 overflow-y-auto overflow-x-hidden relative">
-        <div id="hole-spacer" class="hidden pointer-events-none m-2"></div>
+        <div id="hole-spacer" class="hidden pointer-events-none"></div>
         <div id="messages" class="block w-full"></div>
     </div>
 
@@ -52,6 +90,7 @@
     <div id="input-container" class="flex items-end gap-2 p-3 bg-gray-800 border-t border-gray-700 z-10 transition-all duration-200">
         <button id="expand-btn" title="Expand input" class="bg-gray-700 w-8 h-10 rounded-lg flex items-center justify-center text-sm cursor-pointer border-none text-white">⤢</button>
         <textarea id="message-input" rows="1" placeholder="Type a message or paste code..." class="flex-1 bg-gray-700 text-white border border-gray-600 rounded-xl px-3 py-2.5 text-sm outline-none resize-none min-h-10 max-h-60 leading-relaxed focus:border-blue-500"></textarea>
+
         <div class="bottom-toolbar flex items-center gap-2">
             <button id="tts-btn" class="action-btn bg-gray-600 text-white border-none rounded-full px-3.5 py-2 text-sm font-medium cursor-pointer h-10 transition-colors">TTS: Off</button>
             <button id="tts-settings-btn" title="TTS voice settings" class="action-btn bg-gray-600 text-white border-none rounded-full px-3.5 py-2 text-sm font-medium cursor-pointer h-10 transition-colors">Voice</button>
