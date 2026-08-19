@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Talos Code Editor</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossorigin
+    >
+
+    <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+            rel="stylesheet"
+    >
+
+    <link
+            rel="stylesheet"
+            href="qrc:///style.css"
+    >
+
+    <link
+            rel="stylesheet"
+            href="qrc:///widgets/code/code.css"
+    >
+
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+
+    <style>
+        #project-files {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 250px;
+            overflow-y: auto;
+            background: #18181b;
+            border-right: 1px solid #3f3f46;
+            z-index: 20;
+            padding: 8px 0;
+        }
+
+        #project-files.open {
+            display: block;
+        }
+
+        #project-files-header {
+            padding: 6px 12px 10px;
+            color: #a1a1aa;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .project-file {
+            display: block;
+            width: 100%;
+            padding: 5px 12px;
+            border: none;
+            background: transparent;
+            color: #d4d4d8;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .project-file:hover {
+            background: #27272a;
+        }
+
+        .project-file.active {
+            background: #3f3f46;
+            color: #ffffff;
+        }
+
+        #main-area {
+            position: relative;
+        }
+
+        #review-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        #review-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            min-width: 180px;
+            padding: 4px 0;
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            border-radius: 6px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+            z-index: 100;
+        }
+
+        #review-menu-dropdown.open {
+            display: block;
+        }
+
+        .review-menu-item {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: #e4e4e7;
+            text-align: left;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .review-menu-item:hover {
+            background: #27272a;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="toolbar">
+
+    <div class="toolbar-left">
+
+        <button
+                id="project-toggle"
+                class="btn btn-secondary"
+                title="Show project files"
+        >
+            Project
+        </button>
+
+        <div id="review-menu">
+            <button
+                    id="btn-review"
+                    class="btn btn-secondary"
+            >
+                Review ▾
+            </button>
+
+            <div id="review-menu-dropdown">
+
+                <button
+                        class="review-menu-item"
+                        data-scope="file"
+                >
+                    Review Current File
+                </button>
+
+                <button
+                        class="review-menu-item"
+                        data-scope="project"
+                >
+                    Review Project
+                </button>
+
+            </div>
+        </div>
+
+        <select
+                id="language-select"
+                class="select"
+        >
+            <option value="javascript">JavaScript</option>
+            <option value="cpp">C++</option>
+            <option value="python">Python</option>
+            <option value="html">HTML</option>
+            <option value="json">JSON</option>
+            <option value="typescript">TypeScript</option>
+            <option value="rust">Rust</option>
+            <option value="go">Go</option>
+        </select>
+
+        <select
+                id="theme-select"
+                class="select"
+        >
+            <option value="vs-dark">Dark (vs-dark)</option>
+            <option value="vs">Light (vs)</option>
+            <option value="hc-black">High Contrast</option>
+        </select>
+
+    </div>
+
+    <div class="toolbar-right">
+
+        <button
+                id="btn-format"
+                class="btn btn-secondary"
+        >
+            Format
+        </button>
+
+        <button
+                id="btn-save"
+                class="btn btn-primary"
+        >
+            Save (Ctrl+S)
+        </button>
+
+    </div>
+
+</header>
+
+<div id="main-area">
+
+    <aside id="project-files">
+
+        <div id="project-files-header">
+            Project Files
+        </div>
+
+        <div id="project-files-list"></div>
+
+    </aside>
+
+    <div id="editor-wrapper">
+
+        <main
+                id="editor-container"
+                class="editor-container"
+        ></main>
+
+        <div id="annotation-overlay"></div>
+
+    </div>
+
+    <div id="side-panel">
+
+        <div id="side-panel-header">
+
+            <span>AI Response</span>
+
+            <button
+                    id="btn-close-side-panel"
+                    class="btn-close"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div id="answer-content"></div>
+
+    </div>
+
+</div>
+
+<script src="qrc:///widgets/code/code.js"></script>
+
+<script>
+    document
+        .getElementById('btn-format')
+        .addEventListener('click', function () {
+            if (!window.editor) {
+                return;
+            }
+
+            const action =
+                window.editor.getAction(
+                    'editor.action.formatDocument'
+                );
+
+            if (action) {
+                action.run();
+            }
+        });
+
+    document
+        .getElementById('language-select')
+        .addEventListener('change', function (event) {
+            setLanguage(
+                event.target.value
+            );
+        });
+
+    document
+        .getElementById('theme-select')
+        .addEventListener('change', function (event) {
+            setTheme(
+                event.target.value
+            );
+        });
+
+    document
+        .getElementById('btn-close-side-panel')
+        .addEventListener('click', function () {
+            document
+                .getElementById('side-panel')
+                .classList
+                .remove('open');
+        });
+
+    document
+        .getElementById('project-toggle')
+        .addEventListener('click', function () {
+            document
+                .getElementById('project-files')
+                .classList
+                .toggle('open');
+        });
+
+    document
+        .getElementById('btn-review')
+        .addEventListener('click', function (event) {
+            event.stopPropagation();
+
+            document
+                .getElementById('review-menu-dropdown')
+                .classList
+                .toggle('open');
+        });
+
+    document
+        .querySelectorAll('.review-menu-item')
+        .forEach(function (button) {
+            button.addEventListener(
+                'click',
+                function () {
+                    const scope =
+                        button.dataset.scope;
+
+                    document
+                        .getElementById(
+                            'review-menu-dropdown'
+                        )
+                        .classList
+                        .remove('open');
+
+                    if (
+                        window.backend &&
+                        typeof window.backend.requestReview ===
+                        'function'
+                    ) {
+                        window.backend.requestReview(
+                            scope
+                        );
+                    }
+                }
+            );
+        });
+
+    document.addEventListener(
+        'click',
+        function () {
+            document
+                .getElementById(
+                    'review-menu-dropdown'
+                )
+                .classList
+                .remove('open');
+        }
+    );
+</script>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>chat.html</file>
+        <file>style.css</file>
+        <file>chat.js</file>
+    </qresource>
+</RCC>
