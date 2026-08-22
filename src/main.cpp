@@ -1,37 +1,126 @@
 #include <QApplication>
+#include <QDebug>
 #include <QWebEngineView>
 #include <QtWebEngineCore/QWebEngineProfile>
 #include <QtWebEngineCore/QWebEngineSettings>
+
+#include "InferenceService.h"
+#include "LlamaManager.h"
 #include "MainWindow.h"
 
-int main(int argc, char *argv[]) {
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-            "--no-sandbox "
-            "--disable-gpu-sandbox "
-            "--disable-gpu-compositing "
-            "--disable-seccomp-filter-sandbox");
-    qputenv("QTWEBENGINE_REMOTE_DEBUGGING", "9223");
+static LlamaManager::Backend configuredLlamaBackend()
+{
+    const QString backend =
+        qEnvironmentVariable(
+            "TALOS_LLM_BACKEND"
+        ).trimmed().toLower();
 
-    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+    if (backend == QStringLiteral("rocm"))
+        return LlamaManager::Backend::Rocm;
 
-    int fakeArgc = argc + 1;
-    char** fakeArgv = new char*[fakeArgc];
-    for (int i = 0; i < argc; ++i) {
+    if (backend == QStringLiteral("cuda"))
+        return LlamaManager::Backend::Cuda;
+
+    if (backend == QStringLiteral("vulkan"))
+        return LlamaManager::Backend::Vulkan;
+
+    if (backend == QStringLiteral("intel"))
+        return LlamaManager::Backend::Intel;
+
+    /*
+     * AMD/Linux default.
+     */
+    return LlamaManager::Backend::Vulkan;
+}
+
+int main(int argc, char *argv[])
+{
+    qputenv(
+        "QTWEBENGINE_CHROMIUM_FLAGS",
+        "--no-sandbox "
+        "--disable-gpu-sandbox "
+        "--disable-gpu-compositing "
+        "--disable-seccomp-filter-sandbox"
+    );
+
+    qputenv(
+        "QTWEBENGINE_REMOTE_DEBUGGING",
+        "9223"
+    );
+
+    QCoreApplication::setAttribute(
+        Qt::AA_ShareOpenGLContexts
+    );
+
+    int fakeArgc =
+        argc + 1;
+
+    char **fakeArgv =
+        new char *[fakeArgc];
+
+    for (int i = 0; i < argc; ++i)
         fakeArgv[i] = argv[i];
+
+    char noSandboxFlag[] =
+        "--no-sandbox";
+
+    fakeArgv[argc] =
+        noSandboxFlag;
+
+    QApplication app(
+        fakeArgc,
+        fakeArgv
+    );
+
+    QWebEngineProfile *profile =
+        QWebEngineProfile::defaultProfile();
+
+    QWebEngineSettings *settings =
+        profile->settings();
+
+    settings->setAttribute(
+        QWebEngineSettings::
+            LocalContentCanAccessRemoteUrls,
+        true
+    );
+
+    InferenceService inferenceService;
+
+    const QString sttModelPath =
+        qEnvironmentVariable(
+            "TALOS_STT_MODEL"
+        ).trimmed();
+
+    if (
+        !inferenceService.initialize(
+            configuredLlamaBackend(),
+            sttModelPath
+        )
+    ) {
+        qWarning()
+            << "[Talos] Inference service initialization failed.";
     }
-    char noSandboxFlag[] = "--no-sandbox";
-    fakeArgv[argc] = noSandboxFlag;
 
-    QApplication app(fakeArgc, fakeArgv);
+    QObject::connect(
+        &inferenceService,
+        &InferenceService::serviceError,
+        [](const QString &error) {
+            qWarning()
+                << "[InferenceService]"
+                << error;
+        }
+    );
 
-    QWebEngineProfile *profile = QWebEngineProfile::defaultProfile();
-    QWebEngineSettings *settings = profile->settings();
-    settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+    MainWindow window(
+        &inferenceService
+    );
 
-    MainWindow w;
-    w.show();
+    window.show();
 
-    int result = app.exec();
+    const int result =
+        app.exec();
+
     delete[] fakeArgv;
+
     return result;
 }

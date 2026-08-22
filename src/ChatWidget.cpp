@@ -1,173 +1,294 @@
-#include "ChatWidget.h"
-#include "ChatBackend.h"
+#include "../include/ChatWidget.h"
 
-#include <tesseract/baseapi.h>
-#include <leptonica/allheaders.h>
-#include <QScreen>
+#include "../include/AudioRecorder.h"
+#include "../include/CaptureOverlay.h"
+#include "../include/ChatBackend.h"
+#include "../include/InferenceService.h"
+
 #include <QGuiApplication>
-#include <QThread>
 #include <QImage>
-#include <QPixmap>
-#include <QVBoxLayout>
 #include <QPainter>
-#include <QRegion>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QUrl>
-#include <QNetworkRequest>
-#include <QWebEnginePage>
+#include <QPixmap>
+#include <QScreen>
+#include <QThread>
+#include <QVBoxLayout>
 #include <QWebChannel>
+#include <QWebEnginePage>
 #include <QDebug>
+#include <QFuture>
+#include <QFutureWatcher>
 
-#include "AudioRecorder.h"
-#include "CaptureOverlay.h"
+#include <QtConcurrent/QtConcurrent>
 
-ChatWidget::ChatWidget(QWidget *parent)
+#include <cmath>
+
+
+ChatWidget::ChatWidget(
+    InferenceService *inferenceService,
+    QWidget *parent
+)
     : QWidget(parent)
+    , m_inference(inferenceService)
 {
-    auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
+    auto *layout =
+        new QVBoxLayout(
+            this
+        );
 
-    m_webEngineView = new QWebEngineView(this);
-    layout->addWidget(m_webEngineView);
+    layout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+    );
 
-    m_recorder = new AudioRecorder(this);
-    m_vadTimer = new QTimer(this);
-    m_networkManager = new QNetworkAccessManager(this);
-    m_backend = new ChatBackend(this);
-    m_overlay = new CaptureOverlay(this);
+    m_webEngineView =
+        new QWebEngineView(
+            this
+        );
 
-    if (m_backend->isTtsReady()) {
-        qDebug() << "[ChatWidget] Kokoro TTS model is ready";
-    } else {
-        qWarning() << "[ChatWidget] Kokoro TTS model is not ready";
-        qWarning() << "Make sure these files exist:";
-        qWarning() << "  model.onnx";
-        qWarning() << "  tokens.txt";
-        qWarning() << "  voices.bin";
-        qWarning() << "  espeak-ng-data/";
-    }
+    layout->addWidget(
+        m_webEngineView
+    );
 
-    auto *channel = new QWebChannel(m_webEngineView->page());
-    channel->registerObject(QStringLiteral("backend"), m_backend);
-    m_webEngineView->page()->setWebChannel(channel);
+    m_recorder =
+        new AudioRecorder(
+            this
+        );
 
-    connect(m_backend, &ChatBackend::messageReceived, this, [this](const QString &text) {
-        if (!text.isEmpty()) {
-            appendMessageAsUser(text);
+    m_vadTimer =
+        new QTimer(
+            this
+        );
+
+    m_backend =
+        new ChatBackend(
+            m_inference,
+            this
+        );
+
+    m_overlay =
+        new CaptureOverlay(
+            this
+        );
+
+    auto *channel =
+        new QWebChannel(
+            m_webEngineView->page()
+        );
+
+    channel->registerObject(
+        QStringLiteral(
+            "backend"
+        ),
+        m_backend
+    );
+
+    m_webEngineView
+        ->page()
+        ->setWebChannel(
+            channel
+        );
+
+    connect(
+        m_backend,
+        &ChatBackend::messageReceived,
+        this,
+        [this](const QString &text) {
+
+            if (text.isEmpty())
+                return;
+
+            appendMessageAsUser(
+                text
+            );
+
             sendApiRequest();
         }
-    });
+    );
 
-    connect(m_backend, &ChatBackend::captureRequested, this, &ChatWidget::captureAndSetText);
-    connect(m_backend, &ChatBackend::micToggleRequested, this, &ChatWidget::toggleMicrophone);
-    connect(m_vadTimer, &QTimer::timeout, this, &ChatWidget::processVadChunk);
+    connect(
+        m_backend,
+        &ChatBackend::captureRequested,
+        this,
+        &ChatWidget::captureAndSetText
+    );
 
-    connect(m_webEngineView, &QWebEngineView::loadFinished, this, [this](bool ok) {
-        m_isPageLoaded = ok;
-        qDebug() << "[ChatWidget] Web page load status:" << ok;
+    connect(
+        m_backend,
+        &ChatBackend::micToggleRequested,
+        this,
+        &ChatWidget::toggleMicrophone
+    );
 
-        if (m_isPageLoaded) {
-            syncHoleToJavaScript();
+    connect(
+        m_vadTimer,
+        &QTimer::timeout,
+        this,
+        &ChatWidget::processVadChunk
+    );
+
+    if (m_inference) {
+
+        connect(
+            m_inference,
+            &InferenceService::llmDelta,
+            this,
+            &ChatWidget::handleLlmDelta
+        );
+
+        connect(
+            m_inference,
+            &InferenceService::llmFinished,
+            this,
+            &ChatWidget::handleLlmFinished
+        );
+
+        connect(
+            m_inference,
+            &InferenceService::llmError,
+            this,
+            &ChatWidget::handleLlmError
+        );
+    }
+
+    connect(
+        m_webEngineView,
+        &QWebEngineView::loadFinished,
+        this,
+        [this](bool ok) {
+
+            m_isPageLoaded =
+                ok;
+
+            qDebug()
+                << "[ChatWidget] Web page load status:"
+                << ok;
+
+            if (m_isPageLoaded)
+                syncHoleToJavaScript();
         }
-    });
+    );
 
-    m_webEngineView->load(QUrl("qrc:///widgets/chat/chat.html"));
-    setHoleEnabled(false);
+    m_webEngineView->load(
+        QUrl(
+            QStringLiteral(
+                "qrc:///widgets/chat/chat.html"
+            )
+        )
+    );
+
+    setHoleEnabled(
+        false
+    );
 }
 
-void ChatWidget::setHoleRect(const QRect &hole, bool enabled)
+
+void ChatWidget::setHoleRect(
+    const QRect &hole,
+    bool enabled
+)
 {
     Q_UNUSED(enabled);
-    setHoleRect(hole);
+
+    setHoleRect(
+        hole
+    );
 }
 
-void ChatWidget::setHoleRect(const QRect &hole)
+
+void ChatWidget::setHoleRect(
+    const QRect &hole
+)
 {
-    /*
-     * MainWindow owns m_holeRect in MainWindow coordinates.
-     *
-     * ChatWidget is NOT directly positioned at that same origin:
-     * it is a child of m_containerWidget, and m_containerWidget begins
-     * below the fake 35px title bar.
-     *
-     * mapFrom() follows the real QWidget parent hierarchy and therefore
-     * converts the MainWindow coordinate directly into ChatWidget-local
-     * coordinates without guessing the title-bar offset.
-     */
-    QWidget *topWindow = window();
+    QWidget *topWindow =
+        window();
 
-    QRect localHole = hole;
+    QRect localHole =
+        hole;
 
-    if (topWindow && topWindow != this) {
+    if (
+        topWindow &&
+        topWindow != this
+    ) {
         const QPoint localTopLeft =
             mapFrom(
                 topWindow,
                 hole.topLeft()
             );
 
-        localHole = QRect(
-            localTopLeft,
-            hole.size()
-        );
+        localHole =
+            QRect(
+                localTopLeft,
+                hole.size()
+            );
     }
 
-    if (m_holeRect == localHole) {
+    if (m_holeRect == localHole)
         return;
-    }
 
-    m_previousHoleRect = m_holeRect;
-    m_holeRect = localHole;
+    m_previousHoleRect =
+        m_holeRect;
+
+    m_holeRect =
+        localHole;
 
     updateClippingMask();
 
-    QRect regionToUpdate =
-        m_previousHoleRect.united(m_holeRect);
+    const QRect regionToUpdate =
+        m_previousHoleRect.united(
+            m_holeRect
+        );
 
-    if (regionToUpdate.isEmpty()) {
+    if (regionToUpdate.isEmpty())
         update();
-    } else {
-        update(regionToUpdate);
-    }
+    else
+        update(
+            regionToUpdate
+        );
 
     syncHoleToJavaScript();
 }
 
-void ChatWidget::setHoleEnabled(bool enabled)
+
+void ChatWidget::setHoleEnabled(
+    bool enabled
+)
 {
-    m_holeEnabled = enabled;
+    m_holeEnabled =
+        enabled;
 
     syncHoleToJavaScript();
     updateClippingMask();
     update();
 }
 
-void ChatWidget::updateSubWidgetLayout()
-{
-    if (m_webEngineView) {
-        m_webEngineView->setGeometry(rect());
-    }
-}
 
 void ChatWidget::syncHoleToJavaScript()
 {
-    if (!m_isPageLoaded || !m_webEngineView) {
+    if (
+        !m_isPageLoaded ||
+        !m_webEngineView
+    ) {
         return;
     }
 
-    if (!m_holeEnabled || m_holeRect.isEmpty()) {
-        m_webEngineView->page()->runJavaScript(
-            "if(typeof window.updateHoleRect==='function') "
-            "window.updateHoleRect(0, 0, 0, 0, 0, 0);"
-        );
+    if (
+        !m_holeEnabled ||
+        m_holeRect.isEmpty()
+    ) {
+        m_webEngineView
+            ->page()
+            ->runJavaScript(
+                QStringLiteral(
+                    "if(typeof window.updateHoleRect==='function') "
+                    "window.updateHoleRect(0,0,0,0,0,0);"
+                )
+            );
+
         return;
     }
 
-    /*
-     * Convert ChatWidget-local coordinates into WebEngineView-local
-     * coordinates using the actual widget hierarchy.
-     */
     const QPoint holeTopLeftInWebView =
         m_webEngineView->mapFrom(
             this,
@@ -187,186 +308,393 @@ void ChatWidget::syncHoleToJavaScript()
 
     const QString script =
         QString(
-            "if(typeof window.updateHoleRect==='function') "
-            "window.updateHoleRect(%1, %2, %3, %4, %5, %6);"
+            QStringLiteral(
+                "if(typeof window.updateHoleRect==='function') "
+                "window.updateHoleRect(%1,%2,%3,%4,%5,%6);"
+            )
         )
-            .arg(holeInWebView.x())
-            .arg(holeInWebView.y())
-            .arg(holeInWebView.width())
-            .arg(holeInWebView.height())
-            .arg(viewWidth)
-            .arg(viewHeight);
+        .arg(
+            holeInWebView.x()
+        )
+        .arg(
+            holeInWebView.y()
+        )
+        .arg(
+            holeInWebView.width()
+        )
+        .arg(
+            holeInWebView.height()
+        )
+        .arg(
+            viewWidth
+        )
+        .arg(
+            viewHeight
+        );
 
-    m_webEngineView->page()->runJavaScript(script);
+    m_webEngineView
+        ->page()
+        ->runJavaScript(
+            script
+        );
 }
+
 
 void ChatWidget::updateClippingMask()
 {
-    if (!m_holeEnabled || m_holeRect.isEmpty()) {
+    if (
+        !m_holeEnabled ||
+        m_holeRect.isEmpty()
+    ) {
         clearMask();
         return;
     }
 
-    QRegion region(rect());
-
-    region = region.subtracted(
-        QRegion(m_holeRect)
+    QRegion region(
+        rect()
     );
 
-    setMask(region);
+    region =
+        region.subtracted(
+            QRegion(
+                m_holeRect
+            )
+        );
+
+    setMask(
+        region
+    );
 }
+
 
 void ChatWidget::appendMessage(
     const QString &text,
-    bool isUser)
+    bool isUser
+)
 {
-    if (!m_isPageLoaded || !m_webEngineView) {
+    if (
+        !m_isPageLoaded ||
+        !m_webEngineView
+    ) {
         return;
     }
 
-    QString escaped = text;
+    QString escaped =
+        text;
 
-    escaped.replace("\\", "\\\\")
-           .replace("\"", "\\\"")
-           .replace("\n", "\\n")
-           .replace("\r", "");
+    escaped
+        .replace(
+            "\\",
+            "\\\\"
+        )
+        .replace(
+            "\"",
+            "\\\""
+        )
+        .replace(
+            "\n",
+            "\\n"
+        )
+        .replace(
+            "\r",
+            ""
+        );
 
     const QString script =
         QString(
-            "if(typeof window.appendMessage==='function') "
-            "window.appendMessage(\"%1\", %2);"
+            QStringLiteral(
+                "if(typeof window.appendMessage==='function') "
+                "window.appendMessage(\"%1\", %2);"
+            )
         )
-            .arg(escaped)
-            .arg(isUser ? "true" : "false");
+        .arg(
+            escaped
+        )
+        .arg(
+            isUser
+                ? QStringLiteral("true")
+                : QStringLiteral("false")
+        );
 
-    m_webEngineView->page()->runJavaScript(script);
+    m_webEngineView
+        ->page()
+        ->runJavaScript(
+            script
+        );
 }
+
 
 void ChatWidget::appendToCurrentAiMessage(
-    const QString &deltaText)
+    const QString &deltaText
+)
 {
-    if (!m_isPageLoaded || !m_webEngineView) {
+    if (
+        !m_isPageLoaded ||
+        !m_webEngineView
+    ) {
         return;
     }
 
-    QString escaped = deltaText;
+    QString escaped =
+        deltaText;
 
-    escaped.replace("\\", "\\\\")
-           .replace("\"", "\\\"")
-           .replace("\n", "\\n")
-           .replace("\r", "");
+    escaped
+        .replace(
+            "\\",
+            "\\\\"
+        )
+        .replace(
+            "\"",
+            "\\\""
+        )
+        .replace(
+            "\n",
+            "\\n"
+        )
+        .replace(
+            "\r",
+            ""
+        );
 
     const QString script =
         QString(
-            "if(typeof window.appendToLastAiMessage==='function') "
-            "window.appendToLastAiMessage(\"%1\");"
+            QStringLiteral(
+                "if(typeof window.appendToLastAiMessage==='function') "
+                "window.appendToLastAiMessage(\"%1\");"
+            )
         )
-            .arg(escaped);
+        .arg(
+            escaped
+        );
 
-    m_webEngineView->page()->runJavaScript(script);
+    m_webEngineView
+        ->page()
+        ->runJavaScript(
+            script
+        );
 }
+
 
 void ChatWidget::appendMessageAsUser(
-    const QString &text)
+    const QString &text
+)
 {
-    appendMessage(text, true);
+    appendMessage(
+        text,
+        true
+    );
 
     QJsonObject messageObj;
-    messageObj["role"] = "user";
-    messageObj["content"] = text;
 
-    m_conversationHistory.append(messageObj);
+    messageObj["role"] =
+        QStringLiteral(
+            "user"
+        );
 
-    emit messageSent(text);
+    messageObj["content"] =
+        text;
+
+    m_conversationHistory.append(
+        messageObj
+    );
+
+    emit messageSent(
+        text
+    );
 }
+
 
 void ChatWidget::appendMessageAsAi(
-    const QString &text)
+    const QString &text
+)
 {
-    appendMessage(text, false);
+    appendMessage(
+        text,
+        false
+    );
 
     QJsonObject messageObj;
-    messageObj["role"] = "assistant";
-    messageObj["content"] = text;
 
-    m_conversationHistory.append(messageObj);
+    messageObj["role"] =
+        QStringLiteral(
+            "assistant"
+        );
+
+    messageObj["content"] =
+        text;
+
+    m_conversationHistory.append(
+        messageObj
+    );
 }
+
 
 void ChatWidget::sendApiRequest()
 {
-    if (m_backend) {
+    if (m_backend)
         m_backend->stopSpeech();
+
+    if (!m_inference) {
+
+        qWarning()
+            << "[ChatWidget] No InferenceService.";
+
+        return;
     }
 
-    if (m_currentReply) {
-        m_currentReply->abort();
-        m_currentReply->deleteLater();
-        m_currentReply = nullptr;
+    if (!m_inference->isLlmReady()) {
+
+        /*
+         * IMPORTANT:
+         *
+         * Do not update Capture state here.
+         *
+         * Capture is an OCR feature and must remain
+         * independent from LLM availability.
+         */
+        qWarning()
+            << "[ChatWidget] LLM unavailable; "
+               "cannot send chat request.";
+
+        return;
     }
 
-    QUrl url(
-        "http://127.0.0.1:8080/v1/chat/completions"
-    );
+    m_isStreamingAi =
+        false;
 
-    QNetworkRequest request(url);
-
-    request.setHeader(
-        QNetworkRequest::ContentTypeHeader,
-        "application/json"
-    );
-
-    QJsonObject json;
-
-    json["model"] = "local-model";
-    json["messages"] = m_conversationHistory;
-    json["stream"] = true;
-
-    QJsonDocument doc(json);
-
-    m_streamBuffer.clear();
-    m_isStreamingAi = false;
-
-    m_currentReply =
-        m_networkManager->post(
-            request,
-            doc.toJson()
-        );
-
-    connect(
-        m_currentReply,
-        &QNetworkReply::readyRead,
-        this,
-        &ChatWidget::handleReadyRead
-    );
-
-    connect(
-        m_currentReply,
-        &QNetworkReply::finished,
-        this,
-        &ChatWidget::handleReplyFinished
+    m_inference->sendChatRequest(
+        m_conversationHistory
     );
 }
 
-void ChatWidget::resizeEvent(
-    QResizeEvent *event)
-{
-    QWidget::resizeEvent(event);
 
-    if (m_webEngineView) {
-        m_webEngineView->setGeometry(rect());
+void ChatWidget::handleLlmDelta(
+    const QString &deltaText
+)
+{
+    if (deltaText.isEmpty())
+        return;
+
+    if (m_backend) {
+        m_backend->handleAiStreamDelta(
+            deltaText
+        );
     }
+
+    if (!m_isStreamingAi) {
+
+        m_isStreamingAi =
+            true;
+
+        appendMessageAsAi(
+            deltaText
+        );
+
+        return;
+    }
+
+    if (
+        !m_conversationHistory.isEmpty() &&
+        m_conversationHistory
+                .last()
+                .toObject()
+                .value(
+                    QStringLiteral(
+                        "role"
+                    )
+                )
+                .toString() ==
+            QStringLiteral(
+                "assistant"
+            )
+    ) {
+        QJsonObject lastObj =
+            m_conversationHistory
+                .last()
+                .toObject();
+
+        lastObj["content"] =
+            lastObj
+                .value(
+                    QStringLiteral(
+                        "content"
+                    )
+                )
+                .toString()
+            + deltaText;
+
+        m_conversationHistory[
+            m_conversationHistory.size() - 1
+        ] =
+            lastObj;
+    }
+
+    appendToCurrentAiMessage(
+        deltaText
+    );
+}
+
+
+void ChatWidget::handleLlmFinished()
+{
+    if (m_backend)
+        m_backend->handleAiStreamFinished();
+
+    m_isStreamingAi =
+        false;
+}
+
+
+void ChatWidget::handleLlmError(
+    const QString &error
+)
+{
+    qWarning()
+        << "[ChatWidget] LLM error:"
+        << error;
+
+    if (m_backend)
+        m_backend->handleAiStreamFinished();
+
+    m_isStreamingAi =
+        false;
+}
+
+
+void ChatWidget::resizeEvent(
+    QResizeEvent *event
+)
+{
+    QWidget::resizeEvent(
+        event
+    );
+
+    if (m_webEngineView)
+        m_webEngineView->setGeometry(
+            rect()
+        );
 
     updateClippingMask();
     syncHoleToJavaScript();
 }
 
+
 void ChatWidget::paintEvent(
-    QPaintEvent *event)
+    QPaintEvent *event
+)
 {
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
+    Q_UNUSED(event);
+
+    QPainter painter(
+        this
+    );
+
+    painter.setRenderHint(
+        QPainter::Antialiasing
+    );
 
     if (!m_holeRect.isEmpty()) {
+
         painter.setCompositionMode(
             QPainter::CompositionMode_Clear
         );
@@ -377,47 +705,75 @@ void ChatWidget::paintEvent(
         );
     }
 
-    QWidget::paintEvent(event);
+    QWidget::paintEvent(
+        event
+    );
 }
+
 
 void ChatWidget::toggleMicrophone()
 {
+    if (!m_recorder)
+        return;
+
     if (!m_isRecording) {
-        m_isRecording = true;
-        m_hasSpeechStarted = false;
-        m_silenceMs = 0;
+
+        m_isRecording =
+            true;
+
+        m_hasSpeechStarted =
+            false;
+
+        m_silenceMs =
+            0;
 
         m_recorder->startRecording();
-        m_vadTimer->start(100);
+
+        m_vadTimer->start(
+            100
+        );
 
         if (m_isPageLoaded) {
-            m_webEngineView->page()->runJavaScript(
-                "if(typeof window.setMicState==='function') "
-                "window.setMicState('recording');"
-            );
+            m_webEngineView
+                ->page()
+                ->runJavaScript(
+                    QStringLiteral(
+                        "if(typeof window.setMicState==='function') "
+                        "window.setMicState('recording');"
+                    )
+                );
         }
+
     } else {
+
         stopMicrophoneAndTranscribe();
     }
 }
 
+
 void ChatWidget::processVadChunk()
 {
-    if (!m_isRecording) {
+    if (!m_isRecording)
         return;
-    }
 
-    std::vector<float> recentSamples =
-        m_recorder->getRecentSamples(1600);
+    const std::vector<float> recentSamples =
+        m_recorder
+            ->getRecentSamples(
+                1600
+            );
 
-    if (recentSamples.empty()) {
+    if (recentSamples.empty())
         return;
-    }
 
-    float energy = 0.0f;
+    float energy =
+        0.0f;
 
-    for (float sample : recentSamples) {
-        energy += sample * sample;
+    for (
+        const float sample :
+        recentSamples
+    ) {
+        energy +=
+            sample * sample;
     }
 
     energy /=
@@ -426,161 +782,189 @@ void ChatWidget::processVadChunk()
         );
 
     const bool isSpeech =
-        (energy > 0.001f);
+        energy > 0.001f;
 
     if (isSpeech) {
-        m_hasSpeechStarted = true;
-        m_silenceMs = 0;
-    } else if (m_hasSpeechStarted) {
-        m_silenceMs += 100;
 
-        if (m_silenceMs >= 1500) {
+        m_hasSpeechStarted =
+            true;
+
+        m_silenceMs =
+            0;
+
+    } else if (
+        m_hasSpeechStarted
+    ) {
+
+        m_silenceMs +=
+            100;
+
+        if (m_silenceMs >= 1500)
             stopMicrophoneAndTranscribe();
-        }
     }
 }
+
 
 void ChatWidget::stopMicrophoneAndTranscribe()
 {
     m_vadTimer->stop();
-    m_isRecording = false;
+
+    m_isRecording =
+        false;
 
     if (m_isPageLoaded) {
-        m_webEngineView->page()->runJavaScript(
-            "if(typeof window.setMicState==='function') "
-            "window.setMicState('idle');"
-        );
+        m_webEngineView
+            ->page()
+            ->runJavaScript(
+                QStringLiteral(
+                    "if(typeof window.setMicState==='function') "
+                    "window.setMicState('idle');"
+                )
+            );
     }
 
-    std::vector<float> pcmData =
+    const std::vector<float> pcmData =
         m_recorder->stopRecording();
 
-    if (!pcmData.empty() && m_transcriber) {
-        QString transcribedText =
-            m_transcriber->transcribe(pcmData);
+    if (
+        pcmData.empty() ||
+        !m_inference ||
+        !m_inference->isSttReady()
+    ) {
+        return;
+    }
 
-        if (
-            !transcribedText.isEmpty() &&
-            m_isPageLoaded
-        ) {
+    auto *watcher =
+        new QFutureWatcher<QString>(
+            this
+        );
+
+    connect(
+        watcher,
+        &QFutureWatcher<QString>::finished,
+        this,
+        [this, watcher]() {
+
+            const QString transcribedText =
+                watcher->result();
+
+            watcher->deleteLater();
+
+            if (
+                transcribedText.isEmpty() ||
+                !m_isPageLoaded
+            ) {
+                return;
+            }
+
             QString escaped =
                 transcribedText;
 
-            escaped.replace("\\", "\\\\")
-                   .replace("\"", "\\\"")
-                   .replace("\n", "\\n")
-                   .replace("\r", "");
-
-            m_webEngineView->page()->runJavaScript(
-                QString(
-                    "if(typeof window.setInputValue==='function') "
-                    "window.setInputValue(\"%1\");"
+            escaped
+                .replace(
+                    "\\",
+                    "\\\\"
                 )
-                    .arg(escaped)
-            );
+                .replace(
+                    "\"",
+                    "\\\""
+                )
+                .replace(
+                    "\n",
+                    "\\n"
+                )
+                .replace(
+                    "\r",
+                    ""
+                );
+
+            m_webEngineView
+                ->page()
+                ->runJavaScript(
+                    QString(
+                        QStringLiteral(
+                            "if(typeof window.setInputValue==='function') "
+                            "window.setInputValue(\"%1\");"
+                        )
+                    )
+                    .arg(
+                        escaped
+                    )
+                );
         }
-    }
-}
-
-static QString performScreenOCR(
-    const QImage &srcImage)
-{
-    if (srcImage.isNull()) {
-        return QString();
-    }
-
-    QImage processedImage =
-        srcImage
-            .scaled(
-                srcImage.width() * 2,
-                srcImage.height() * 2,
-                Qt::KeepAspectRatio,
-                Qt::SmoothTransformation
-            )
-            .convertToFormat(
-                QImage::Format_RGB888
-            );
-
-    tesseract::TessBaseAPI tess;
-
-    if (
-        tess.Init(
-            NULL,
-            "eng",
-            tesseract::OEM_LSTM_ONLY
-        )
-    ) {
-        return QString();
-    }
-
-    tess.SetPageSegMode(
-        tesseract::PSM_AUTO
     );
 
-    tess.SetImage(
-        processedImage.bits(),
-        processedImage.width(),
-        processedImage.height(),
-        3,
-        processedImage.bytesPerLine()
+    const auto future =
+        QtConcurrent::run(
+            [this, pcmData]() {
+                return m_inference
+                    ? m_inference->transcribe(
+                          pcmData
+                      )
+                    : QString();
+            }
+        );
+
+    watcher->setFuture(
+        future
     );
-
-    char *outText =
-        tess.GetUTF8Text();
-
-    QString result =
-        QString::fromUtf8(outText)
-            .trimmed();
-
-    delete[] outText;
-    tess.End();
-
-    return result;
 }
+
 
 void ChatWidget::captureAndSetText()
 {
     if (m_isPageLoaded) {
-        m_webEngineView->page()->runJavaScript(
-            "if(typeof window.setCaptureState==='function') "
-            "window.setCaptureState('Reading...', false, '');"
-        );
+        m_webEngineView
+            ->page()
+            ->runJavaScript(
+                QStringLiteral(
+                    "if(typeof window.setCaptureState==='function') "
+                    "window.setCaptureState('Reading...', false, '');"
+                )
+            );
     }
 
     qApp->processEvents();
 
     if (m_holeRect.isEmpty()) {
+
         if (m_isPageLoaded) {
-            m_webEngineView->page()->runJavaScript(
-                "if(typeof window.setCaptureState==='function') "
-                "window.setCaptureState('No Region', true, 'error');"
-            );
+            m_webEngineView
+                ->page()
+                ->runJavaScript(
+                    QStringLiteral(
+                        "if(typeof window.setCaptureState==='function') "
+                        "window.setCaptureState('No Region', true, 'error');"
+                    )
+                );
         }
+
         return;
     }
 
-    /*
-     * m_holeRect is ChatWidget-local.
-     * Convert directly to global desktop coordinates.
-     */
     const QPoint globalTopLeft =
-        mapToGlobal(m_holeRect.topLeft());
+        mapToGlobal(
+            m_holeRect.topLeft()
+        );
 
     const QRect globalCaptureRect(
         globalTopLeft,
         m_holeRect.size()
     );
 
-    QWidget *topWindow = window();
+    QWidget *topWindow =
+        window();
 
-    if (!topWindow) {
+    if (!topWindow)
         return;
-    }
 
     topWindow->hide();
+
     qApp->processEvents();
 
-    QThread::msleep(250);
+    QThread::msleep(
+        250
+    );
 
     QScreen *targetScreen =
         QGuiApplication::screenAt(
@@ -592,19 +976,21 @@ void ChatWidget::captureAndSetText()
             QGuiApplication::primaryScreen();
     }
 
-    /*
-     * No valid screen means there is nothing safe to capture.
-     */
     if (!targetScreen) {
+
         topWindow->show();
         topWindow->raise();
         topWindow->activateWindow();
 
         if (m_isPageLoaded) {
-            m_webEngineView->page()->runJavaScript(
-                "if(typeof window.setCaptureState==='function') "
-                "window.setCaptureState('Capture Failed', true, 'error');"
-            );
+            m_webEngineView
+                ->page()
+                ->runJavaScript(
+                    QStringLiteral(
+                        "if(typeof window.setCaptureState==='function') "
+                        "window.setCaptureState('Capture Failed', true, 'error');"
+                    )
+                );
         }
 
         return;
@@ -613,20 +999,24 @@ void ChatWidget::captureAndSetText()
     const qreal dpr =
         targetScreen->devicePixelRatio();
 
-    const QRect screenGeo =
+    const QRect screenGeometry =
         targetScreen->geometry();
 
     const int cropX =
         std::round(
-            (globalCaptureRect.x() -
-             screenGeo.x()) *
+            (
+                globalCaptureRect.x() -
+                screenGeometry.x()
+            ) *
             dpr
         );
 
     const int cropY =
         std::round(
-            (globalCaptureRect.y() -
-             screenGeo.y()) *
+            (
+                globalCaptureRect.y() -
+                screenGeometry.y()
+            ) *
             dpr
         );
 
@@ -642,12 +1032,15 @@ void ChatWidget::captureAndSetText()
             dpr
         );
 
-    QPixmap fullScreen =
-        targetScreen->grabWindow(0);
+    const QPixmap fullScreen =
+        targetScreen->grabWindow(
+            0
+        );
 
     QPixmap screenshot;
 
     if (!fullScreen.isNull()) {
+
         QRect nativeCropRect(
             cropX,
             cropY,
@@ -671,6 +1064,7 @@ void ChatWidget::captureAndSetText()
     topWindow->show();
     topWindow->raise();
     topWindow->activateWindow();
+
     qApp->processEvents();
 
     if (m_overlay) {
@@ -683,38 +1077,57 @@ void ChatWidget::captureAndSetText()
 
     QString extractedText;
 
-    if (!screenshot.isNull()) {
+    if (
+        !screenshot.isNull() &&
+        m_inference
+    ) {
         extractedText =
-            performScreenOCR(
+            m_inference->extractText(
                 screenshot.toImage()
             );
     }
 
-    if (m_overlay) {
+    if (m_overlay)
         m_overlay->stopScan();
-    }
 
     if (!extractedText.isEmpty()) {
+
         appendMessageAsUser(
             extractedText
         );
 
+        /*
+         * OCR succeeded. Capture remains a capture/OCR
+         * operation. sendApiRequest() may fail because
+         * the LLM is unavailable, but that must not
+         * change the Capture state.
+         */
         sendApiRequest();
 
         if (m_isPageLoaded) {
-            m_webEngineView->page()->runJavaScript(
-                "if(typeof window.setCaptureState==='function') "
-                "window.setCaptureState('Copied!', true, 'success'); "
-                "if(typeof window.clearInput==='function') "
-                "window.clearInput();"
-            );
+            m_webEngineView
+                ->page()
+                ->runJavaScript(
+                    QStringLiteral(
+                        "if(typeof window.setCaptureState==='function') "
+                        "window.setCaptureState('Copied!', true, 'success'); "
+                        "if(typeof window.clearInput==='function') "
+                        "window.clearInput();"
+                    )
+                );
         }
+
     } else {
+
         if (m_isPageLoaded) {
-            m_webEngineView->page()->runJavaScript(
-                "if(typeof window.setCaptureState==='function') "
-                "window.setCaptureState('No Text Found', true, 'error');"
-            );
+            m_webEngineView
+                ->page()
+                ->runJavaScript(
+                    QStringLiteral(
+                        "if(typeof window.setCaptureState==='function') "
+                        "window.setCaptureState('No Text Found', true, 'error');"
+                    )
+                );
         }
     }
 
@@ -723,133 +1136,15 @@ void ChatWidget::captureAndSetText()
         this,
         [this]() {
             if (m_isPageLoaded) {
-                m_webEngineView->page()->runJavaScript(
-                    "if(typeof window.setCaptureState==='function') "
-                    "window.setCaptureState('Capture', true, '');"
-                );
+                m_webEngineView
+                    ->page()
+                    ->runJavaScript(
+                        QStringLiteral(
+                            "if(typeof window.setCaptureState==='function') "
+                            "window.setCaptureState('Capture', true, '');"
+                        )
+                    );
             }
         }
     );
-}
-void ChatWidget::handleReadyRead()
-{
-    if (!m_currentReply) {
-        return;
-    }
-
-    m_streamBuffer.append(
-        m_currentReply->readAll()
-    );
-
-    while (m_streamBuffer.contains('\n')) {
-        int newlineIdx =
-            m_streamBuffer.indexOf('\n');
-
-        QByteArray line =
-            m_streamBuffer
-                .left(newlineIdx)
-                .trimmed();
-
-        m_streamBuffer.remove(
-            0,
-            newlineIdx + 1
-        );
-
-        if (line.isEmpty()) {
-            continue;
-        }
-
-        if (line.startsWith("data: ")) {
-            line = line.mid(6).trimmed();
-        }
-
-        if (line == "[DONE]") {
-            break;
-        }
-
-        QJsonDocument doc =
-            QJsonDocument::fromJson(line);
-
-        if (
-            !doc.isNull() &&
-            doc.isObject()
-        ) {
-            QJsonObject root =
-                doc.object();
-
-            QString deltaText;
-
-            if (root.contains("choices")) {
-                QJsonArray choices =
-                    root["choices"].toArray();
-
-                if (!choices.isEmpty()) {
-                    QJsonObject choice =
-                        choices[0].toObject();
-
-                    if (choice.contains("delta")) {
-                        QJsonObject delta =
-                            choice["delta"].toObject();
-
-                        if (delta.contains("content")) {
-                            deltaText =
-                                delta["content"].toString();
-                        }
-                    }
-                }
-            }
-
-            if (!deltaText.isEmpty()) {
-                if (m_backend) {
-                    m_backend->handleAiStreamDelta(
-                        deltaText
-                    );
-                }
-
-                if (!m_isStreamingAi) {
-                    m_isStreamingAi = true;
-                    appendMessageAsAi(deltaText);
-                } else {
-                    if (
-                        !m_conversationHistory.isEmpty() &&
-                        m_conversationHistory
-                                .last()
-                                .toObject()["role"]
-                                .toString() ==
-                            "assistant"
-                    ) {
-                        QJsonObject lastObj =
-                            m_conversationHistory
-                                .last()
-                                .toObject();
-
-                        lastObj["content"] =
-                            lastObj["content"]
-                                .toString() +
-                            deltaText;
-
-                        m_conversationHistory[
-                            m_conversationHistory.size() - 1
-                        ] = lastObj;
-                    }
-
-                    appendToCurrentAiMessage(
-                        deltaText
-                    );
-                }
-            }
-        }
-    }
-}
-
-void ChatWidget::handleReplyFinished()
-{
-    if (m_currentReply) {
-        m_currentReply->deleteLater();
-        m_currentReply = nullptr;
-    }
-
-    if (m_backend) {
-        m_backend->handleAiStreamFinished();
-    }
 }

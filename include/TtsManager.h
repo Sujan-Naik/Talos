@@ -39,6 +39,10 @@ public:
 
     void setEnabled(bool enabled);
 
+    [[nodiscard]] bool isEnabled() const {
+        return m_enabled;
+    }
+
     void enqueueSentence(
         const QString &sentence,
         int speakerId = 0
